@@ -4,3 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+
+chs_parser = { path = "../chs_parser" }
+chs_vm = { path = "../chs_vm" }

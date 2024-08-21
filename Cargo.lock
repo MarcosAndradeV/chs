@@ -3,5 +3,24 @@
 version = 3
 
 [[package]]
+name = "chs_lexer"
+version = "0.1.0"
+
+[[package]]
+name = "chs_parser"
+version = "0.1.0"
+dependencies = [
+ "chs_lexer",
+]
+
+[[package]]
+name = "chs_vm"
+version = "0.1.0"
+
+[[package]]
 name = "chsi"
 version = "0.1.0"
+dependencies = [
+ "chs_parser",
+ "chs_vm",
+]
