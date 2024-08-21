@@ -1,0 +1,10 @@
+./target/debug/chsi tests/reduce.chs
+./target/debug/chsi tests/fizzbuzz.chs
+./target/debug/chsi tests/sumavg.chs
+./target/debug/chsi tests/length.chs
+./target/debug/chsi tests/gcd.chs
+./target/debug/chsi tests/hello.chs
+./target/debug/chsi tests/ispalindrome.chs
+./target/debug/chsi tests/range.chs
+./target/debug/chsi tests/rule110.chs
+./target/debug/chsi tests/fib.chs
