@@ -1,9 +1,13 @@
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Instr {
     Halt,
-    PushI32(i32),
     Drop,
     Debug,
+    PushI32(i32),  // Immediate
+    Jmp(isize),    // Relative Address
+    JmpIf(isize),  // Relative Address
+    AJmp(usize),   // Abslute Address
+    AJmpIf(usize), // Abslute Address
 }
 
 #[derive(Debug, Clone)]

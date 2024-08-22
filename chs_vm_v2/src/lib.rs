@@ -1,6 +1,5 @@
-use instructions::Bytecode;
-
 pub mod instructions;
+use instructions::{Bytecode, Instr};
 
 pub fn jump(addr: usize, rel: isize) -> usize {
     (addr as isize + rel) as usize
@@ -23,15 +22,33 @@ pub fn vm_run(program: Bytecode) {
         }
         let mut next_addr = ip + 1;
         match program.program[ip] {
-            instructions::Instr::Halt => {
+            Instr::Halt => {
                 next_addr = program.program.len();
             }
-            instructions::Instr::PushI32(v) => stack.push(v),
-            instructions::Instr::Drop => {
+            Instr::PushI32(v) => stack.push(v),
+            Instr::Drop => {
                 stack.pop();
             }
-            instructions::Instr::Debug => {
+            Instr::Debug => {
                 println!("Debug:\nData Stack: {:?}", stack);
+            }
+            Instr::Jmp(rel_addr) => {
+                next_addr = jump(ip, rel_addr);
+            }
+            Instr::JmpIf(rel_addr) => {
+                let test = stack.pop().unwrap();
+                if test != 0 {
+                    next_addr = jump(ip, rel_addr);
+                }
+            }
+            Instr::AJmp(abs_addr) => {
+                next_addr = abs_addr;
+            }
+            Instr::AJmpIf(abs_addr) => {
+                let test = stack.pop().unwrap();
+                if test != 0 {
+                    next_addr = abs_addr;
+                }
             }
         }
         ip = next_addr
