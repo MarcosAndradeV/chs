@@ -6,4 +6,4 @@ edition = "2021"
 [dependencies]
 
 chs_parser = { path = "../chs_parser" }
-chs_vm = { path = "../chs_vm" }
+chs_vm_v2 = { path = "../chs_vm_v2" }

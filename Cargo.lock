@@ -26,5 +26,5 @@ name = "chsi"
 version = "0.1.0"
 dependencies = [
  "chs_parser",
- "chs_vm",
+ "chs_vm_v2",
 ]

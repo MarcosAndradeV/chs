@@ -50,6 +50,11 @@ pub fn vm_run(program: Bytecode) {
                     next_addr = abs_addr;
                 }
             }
+            Instr::PlusI => {
+                let a = stack.pop().unwrap();
+                let b = stack.pop().unwrap();
+                stack.push(a + b);
+            }
         }
         ip = next_addr
     }
