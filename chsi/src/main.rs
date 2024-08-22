@@ -1,7 +1,6 @@
 use std::{env, fs::File, io::Read, process::exit};
 
-use chs_parser::{parse_file, Operation};
-use chs_vm::{instructions::Instr, value::Value};
+use chs_parser::parse_file;
 
 fn main() {
     let mut args = env::args();
@@ -10,19 +9,10 @@ fn main() {
         if let Ok(mut file) = File::open(filepath.clone()) {
             let mut buf = Vec::new();
             let _ = file.read_to_end(&mut buf);
+            let program = parse_file(buf, filepath);
+            dbg!(program);
         } else {
             exit(-1)
         }
-    }
-}
-
-fn foo(data: Vec<u8>) {
-    let ops = parse_file(data, "...".to_string());
-    for op in ops {
-        match op {
-            Operation::PushI(a) => Instr::Const(Value::Int64(a as i64)),
-            Operation::Drop => Instr::Pop,
-            Operation::Plus => Instr::Add,
-        };
     }
 }

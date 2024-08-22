@@ -7,6 +7,9 @@ pub struct Lexer {
     loc: Loc,
 }
 
+const KEYWORDS: &[&'static str] = &["drop", "debug", "if", "else", "while", "fn", ":", "=", "->"];
+const INTRISIC: &[u8] = &[b'+', b'-', b'=', b':', b'>'];
+
 impl Lexer {
     pub fn new(data: Vec<u8>) -> Self {
         let max = data.len();
@@ -30,13 +33,13 @@ impl Lexer {
             self.loc = self.loc.next(self.curr_char());
         }
     }
-    // fn peek_char(&self, offset: usize) -> u8 {
-    //     if self.pos + offset < self.max {
-    //         self.data[self.pos + offset]
-    //     } else {
-    //         0
-    //     }
-    // }
+    fn peek_char(&self, offset: usize) -> u8 {
+        if self.pos + offset < self.max {
+            self.data[self.pos + offset]
+        } else {
+            0
+        }
+    }
     fn make_token(&self, start: usize, kind: TokenKind, start_loc: Loc) -> Token {
         let value = String::from_utf8_lossy(&self.data[start..self.pos]).to_string();
         Token::new(value, kind, start_loc)
@@ -50,11 +53,31 @@ impl Lexer {
         let start = self.pos;
         let start_loc = self.loc;
         match self.curr_char() {
+            c if c.is_ascii_whitespace() => self.whitespace(start),
             b'a'..=b'z' | b'A'..=b'Z' => self.identfier(start),
             b'0'..=b'9' => self.number(start),
-
-            c if c.is_ascii_whitespace() => self.whitespace(start),
-            b'+' => self.make_token_advance(start, TokenKind::Intrinsic),
+            b'{' => self.make_token_advance(start, TokenKind::OpenCurly),
+            b'}' => self.make_token_advance(start, TokenKind::CloseCurly),
+            b':' => self.make_token_advance(start, TokenKind::KeyWord),
+            b'-' => {
+                if self.peek_char(1) == b'-' {
+                    self.pos += 2;
+                    return self.comment(start);
+                }
+                if self.peek_char(1) == b'>' {
+                    self.pos += 2;
+                    return self.make_token(start, TokenKind::KeyWord, start_loc);
+                }
+                self.make_token_advance(start, TokenKind::Intrinsic)
+            }
+            b'=' => {
+                if self.peek_char(1) == b'=' {
+                    self.pos += 2;
+                    return self.make_token(start, TokenKind::Intrinsic, start_loc);
+                }
+                self.make_token_advance(start, TokenKind::KeyWord)
+            }
+            c if INTRISIC.contains(&c) => self.make_token_advance(start, TokenKind::Intrinsic),
             _ => {
                 if self.pos < self.max {
                     self.make_token_advance(start, TokenKind::Invalid)
@@ -68,13 +91,14 @@ impl Lexer {
         let start_loc = self.loc;
         loop {
             self.advance_pos();
-            if self.curr_char().is_ascii_whitespace() {
+            let curr_char = &self.curr_char();
+            if curr_char.is_ascii_whitespace() || INTRISIC.contains(&curr_char) {
                 break;
             }
         }
         let value = String::from_utf8_lossy(&self.data[start..self.pos]).to_string();
         match value.as_str() {
-            "drop" => Token::new(value, TokenKind::KeyWord, start_loc),
+            c if KEYWORDS.contains(&c) => Token::new(value, TokenKind::KeyWord, start_loc),
             _ => Token::new(value, TokenKind::Word, start_loc),
         }
     }
@@ -98,6 +122,16 @@ impl Lexer {
         }
 
         self.make_token(start, TokenKind::Whitespace, start_loc)
+    }
+    fn comment(&mut self, start: usize) -> Token {
+        let start_loc = self.loc;
+        loop {
+            self.advance_pos();
+            if matches!(self.curr_char(), b'\n' | b'\0') {
+                break;
+            }
+        }
+        self.make_token(start, TokenKind::Comment, start_loc)
     }
 }
 
@@ -128,10 +162,13 @@ pub enum TokenKind {
     EOF,
     Invalid,
     Whitespace,
+    Comment,
     Interger,
     KeyWord,
     Word,
     Intrinsic,
+    OpenCurly,
+    CloseCurly,
 }
 
 #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Default)]
@@ -143,7 +180,7 @@ pub struct Loc {
 
 impl fmt::Display for Loc {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}:{}:", self.line, self.col)
+        write!(f, ":{}:{}", self.line, self.col)
     }
 }
 
