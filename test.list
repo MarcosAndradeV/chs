@@ -1,2 +1,2 @@
-./target/debug/chsi tests/test1.chs
 ./target/debug/chsi tests/test2.chs
+./target/debug/chsi tests/test1.chs

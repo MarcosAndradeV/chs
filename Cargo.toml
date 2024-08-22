@@ -1,5 +1,5 @@
 [workspace]
-members = ["chsi", "chs_lexer", "chs_parser", "chs_vm"]
+members = ["chsi", "chs_lexer", "chs_parser", "chs_vm", "chs_vm_v2"]
 resolver = "2"
 
 [profile.release]

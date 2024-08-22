@@ -18,6 +18,10 @@ name = "chs_vm"
 version = "0.1.0"
 
 [[package]]
+name = "chs_vm_v2"
+version = "0.1.0"
+
+[[package]]
 name = "chsi"
 version = "0.1.0"
 dependencies = [
