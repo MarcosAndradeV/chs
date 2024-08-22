@@ -8,7 +8,7 @@ pub struct Lexer {
 }
 
 const KEYWORDS: &[&'static str] = &["drop", "debug", "if", "else", "while", "fn", ":", "=", "->"];
-const INTRISIC: &[u8] = &[b'+', b'-', b'=', b':', b'>'];
+const INTRISIC: &[u8] = &[b'+', b'-', b'=', b':', b'>', b'<'];
 
 impl Lexer {
     pub fn new(data: Vec<u8>) -> Self {
@@ -106,7 +106,7 @@ impl Lexer {
         let start_loc = self.loc;
         loop {
             self.advance_pos();
-            if self.curr_char().is_ascii_whitespace() {
+            if !matches!(self.curr_char(), b'0'..=b'9') {
                 break;
             }
         }

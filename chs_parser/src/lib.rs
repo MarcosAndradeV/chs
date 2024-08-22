@@ -18,12 +18,9 @@ pub fn parse_file(input: Vec<u8>, filepath: String) -> Vec<Operation> {
             break;
         }
         ops.push(match token.kind {
-            TokenKind::KeyWord if token == *"if" => parse_if_expr(&mut p),
-            TokenKind::KeyWord if token == *"else" => parse_else_expr(&mut p),
-            TokenKind::KeyWord if token == *"while" => parse_while_expr(&mut p),
             TokenKind::KeyWord if token == *"fn" => parse_fn_expr(&mut p),
-            TokenKind::KeyWord if token == *":" => parse_assing_expr(&mut p),
-            _ => parse_expr(token),
+
+            _ => parse_expr(&mut p, token),
         })
     }
     return ops;
@@ -95,7 +92,7 @@ fn parse_fn_expr(p: &mut Parser) -> Operation {
     loop {
         match p.require() {
             Ok(token) if token.kind == TokenKind::CloseCurly => break,
-            Ok(token) => body.push(parse_expr(token)),
+            Ok(token) => body.push(parse_expr(p, token)),
             Err(e) => {
                 eprintln!("Error:\n  Expect `}}` but got EOF in {}{}", p.filepath, e);
                 exit(-1);
@@ -138,9 +135,9 @@ fn parse_while_expr(p: &mut Parser) -> Operation {
     loop {
         match p.require() {
             Ok(token) if token.kind == TokenKind::OpenCurly => break,
-            Ok(token) => cond.push(parse_expr(token)),
+            Ok(token) => cond.push(parse_expr(p, token)),
             Err(e) => {
-                eprintln!("Error:\n  Expect `}}` but got EOF in {}{}", p.filepath, e);
+                eprintln!("Error:\n  Expect `{{` but got EOF in {}{}", p.filepath, e);
                 exit(-1);
             }
         }
@@ -149,7 +146,7 @@ fn parse_while_expr(p: &mut Parser) -> Operation {
     loop {
         match p.require() {
             Ok(token) if token.kind == TokenKind::CloseCurly => break,
-            Ok(token) => body.push(parse_expr(token)),
+            Ok(token) => body.push(parse_expr(p, token)),
             Err(e) => {
                 eprintln!("Error:\n  Expect `}}` but got EOF in {}{}", p.filepath, e);
                 exit(-1);
@@ -166,7 +163,7 @@ fn parse_if_expr(p: &mut Parser) -> Operation {
             loop {
                 match p.require() {
                     Ok(token) if token.kind == TokenKind::CloseCurly => break,
-                    Ok(token) => body.push(parse_expr(token)),
+                    Ok(token) => body.push(parse_expr(p, token)),
                     Err(e) => {
                         eprintln!("Error:\n  Expect `}}` but got EOF in {}{}", p.filepath, e);
                         exit(-1);
@@ -189,7 +186,7 @@ fn parse_else_expr(p: &mut Parser) -> Operation {
             loop {
                 match p.require() {
                     Ok(token) if token.kind == TokenKind::CloseCurly => break,
-                    Ok(token) => body.push(parse_expr(token)),
+                    Ok(token) => body.push(parse_expr(p, token)),
                     Err(e) => {
                         eprintln!("Error:\n  Expect `}}` but got EOF in {}{}", p.filepath, e);
                         exit(-1);
@@ -205,8 +202,12 @@ fn parse_else_expr(p: &mut Parser) -> Operation {
     }
 }
 
-fn parse_expr(token: Token) -> Operation {
+fn parse_expr(p: &mut Parser, token: Token) -> Operation {
     match token.kind {
+        TokenKind::KeyWord if token == *"if" => parse_if_expr(p),
+        TokenKind::KeyWord if token == *"else" => parse_else_expr(p),
+        TokenKind::KeyWord if token == *"while" => parse_while_expr(p),
+        TokenKind::KeyWord if token == *":" => parse_assing_expr(p),
         TokenKind::Interger => {
             let val = token
                 .value
@@ -248,7 +249,7 @@ impl Parser {
     }
     fn require(&mut self) -> Result<Token, Loc> {
         let tok = self.next();
-        if matches!(tok.kind, TokenKind::Invalid | TokenKind::EOF) {
+        if matches!(tok.kind, TokenKind::EOF) {
             return Err(tok.loc);
         }
         Ok(tok)
