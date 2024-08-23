@@ -7,8 +7,10 @@ pub struct Lexer {
     loc: Loc,
 }
 
-const KEYWORDS: &[&'static str] = &["drop", "debug", "if", "else", "while", "fn", ":", "=", "->"];
-const INTRISIC: &[u8] = &[b'+', b'-', b'=', b':', b'>', b'<'];
+const KEYWORDS: &[&'static str] = &[
+    "dup", "drop", "debug", "if", "else", "while", "fn", "let", ":", "=", "->", "&",
+];
+const INTRISIC: &[u8] = &[b'+', b'-', b'=', b':', b'>', b'<', b'!'];
 
 impl Lexer {
     pub fn new(data: Vec<u8>) -> Self {
@@ -59,6 +61,7 @@ impl Lexer {
             b'{' => self.make_token_advance(start, TokenKind::OpenCurly),
             b'}' => self.make_token_advance(start, TokenKind::CloseCurly),
             b':' => self.make_token_advance(start, TokenKind::KeyWord),
+            b'&' => self.make_token_advance(start, TokenKind::KeyWord),
             b'-' => {
                 if self.peek_char(1) == b'-' {
                     self.pos += 2;
@@ -67,6 +70,13 @@ impl Lexer {
                 if self.peek_char(1) == b'>' {
                     self.pos += 2;
                     return self.make_token(start, TokenKind::KeyWord, start_loc);
+                }
+                self.make_token_advance(start, TokenKind::Intrinsic)
+            }
+            b'!' => {
+                if self.peek_char(1) == b'=' {
+                    self.pos += 2;
+                    return self.make_token(start, TokenKind::Intrinsic, start_loc);
                 }
                 self.make_token_advance(start, TokenKind::Intrinsic)
             }
@@ -92,7 +102,7 @@ impl Lexer {
         loop {
             self.advance_pos();
             let curr_char = &self.curr_char();
-            if curr_char.is_ascii_whitespace() || INTRISIC.contains(&curr_char) {
+            if curr_char.is_ascii_whitespace() {
                 break;
             }
         }

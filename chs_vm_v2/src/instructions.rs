@@ -3,7 +3,11 @@ pub enum Instr {
     Halt,
     Drop,
     Debug,
+    Dup,
     PlusI,
+    EqI,
+    NEqI,
+    Bind(u32),     // Relative Position
     PushI32(i32),  // Immediate
     Jmp(isize),    // Relative Address
     JmpIf(isize),  // Relative Address

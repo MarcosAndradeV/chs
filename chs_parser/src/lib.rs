@@ -5,12 +5,17 @@ use chs_lexer::{Lexer, Loc, Token, TokenKind};
 struct Parser {
     pub lexer: Lexer,
     pub filepath: String,
+    pub peeked: Option<Token>,
 }
 
 pub fn parse_file(input: Vec<u8>, filepath: String) -> Vec<Operation> {
     let lexer = Lexer::new(input);
     let mut ops: Vec<Operation> = vec![];
-    let mut p = Parser { lexer, filepath };
+    let mut p = Parser {
+        lexer,
+        filepath,
+        peeked: None,
+    };
 
     loop {
         let token = p.next();
@@ -122,7 +127,7 @@ fn parse_assing_expr(p: &mut Parser) -> Operation {
         }
     }
     match p.expect(TokenKind::Word) {
-        Ok(token) => Operation::Bind(token.value, type_.into()),
+        Ok(token) => Operation::Assing(token.value, type_.into()),
         Err(e) => {
             eprintln!("Error:\n  Expect a Word in {}{}", p.filepath, e);
             exit(-1);
@@ -170,6 +175,31 @@ fn parse_if_expr(p: &mut Parser) -> Operation {
                     }
                 }
             }
+            if p.peek() == "else" {
+                match p.expect(TokenKind::OpenCurly) {
+                    Ok(_) => {
+                        let mut elsebody: Vec<Operation> = vec![];
+                        loop {
+                            match p.require() {
+                                Ok(token) if token.kind == TokenKind::CloseCurly => break,
+                                Ok(token) => elsebody.push(parse_expr(p, token)),
+                                Err(e) => {
+                                    eprintln!(
+                                        "Error:\n  Expect `}}` but got EOF in {}{}",
+                                        p.filepath, e
+                                    );
+                                    exit(-1);
+                                }
+                            }
+                        }
+                        return Operation::IfElse(body.into(), elsebody.into());
+                    }
+                    Err(e) => {
+                        eprintln!("Error:\n  Expect `{{` after `else` in {}{}", p.filepath, e);
+                        exit(-1)
+                    }
+                }
+            }
             Operation::If(body.into())
         }
         Err(e) => {
@@ -179,21 +209,15 @@ fn parse_if_expr(p: &mut Parser) -> Operation {
     }
 }
 
-fn parse_else_expr(p: &mut Parser) -> Operation {
-    match p.expect(TokenKind::OpenCurly) {
-        Ok(_) => {
-            let mut body: Vec<Operation> = vec![];
-            loop {
-                match p.require() {
-                    Ok(token) if token.kind == TokenKind::CloseCurly => break,
-                    Ok(token) => body.push(parse_expr(p, token)),
-                    Err(e) => {
-                        eprintln!("Error:\n  Expect `}}` but got EOF in {}{}", p.filepath, e);
-                        exit(-1);
-                    }
-                }
-            }
-            Operation::Else(body.into())
+fn parse_bind_expr(p: &mut Parser) -> Operation {
+    match p.expect(TokenKind::Interger) {
+        Ok(token) => {
+            let val = token
+                .value
+                .parse()
+                .map_err(|e| eprintln!("ParseIntError: {} in {:?}", e, token))
+                .expect("ParseInt");
+            Operation::Bind(val)
         }
         Err(e) => {
             eprintln!("Error:\n  Expect `{{` after `else` in {}{}", p.filepath, e);
@@ -202,12 +226,53 @@ fn parse_else_expr(p: &mut Parser) -> Operation {
     }
 }
 
+fn parse_let_expr(p: &mut Parser) -> Operation {
+    let mut value: Vec<Operation> = vec![];
+    loop {
+        match p.require() {
+            Ok(token) if token == *":" => break,
+            Ok(token) => value.push(parse_expr(p, token)),
+            Err(e) => {
+                eprintln!("Error:\n  Expect `:` but got EOF in {}{}", p.filepath, e);
+                exit(-1);
+            }
+        }
+    }
+    let mut type_: Vec<String> = vec![];
+    loop {
+        match p.require() {
+            Ok(token) if token == *"=" => break,
+            Ok(token) if token.kind == TokenKind::Word => type_.push(token.value),
+            Ok(token) => {
+                eprintln!(
+                    "Error:\n  Expect Type but got `{}` in {}{}",
+                    token.value, p.filepath, token.loc
+                );
+                exit(-1);
+            }
+            Err(e) => {
+                eprintln!("Error:\n  Expect `=` but got EOF in {}{}", p.filepath, e);
+                exit(-1);
+            }
+        }
+    }
+
+    match p.expect(TokenKind::Word) {
+        Ok(token) => Operation::Let(token.value, type_.into(), value.into()),
+        Err(e) => {
+            eprintln!("Error:\n  Expect a Word in {}{}", p.filepath, e);
+            exit(-1);
+        }
+    }
+}
+
 fn parse_expr(p: &mut Parser, token: Token) -> Operation {
     match token.kind {
         TokenKind::KeyWord if token == *"if" => parse_if_expr(p),
-        TokenKind::KeyWord if token == *"else" => parse_else_expr(p),
         TokenKind::KeyWord if token == *"while" => parse_while_expr(p),
         TokenKind::KeyWord if token == *":" => parse_assing_expr(p),
+        TokenKind::KeyWord if token == *"let" => parse_let_expr(p),
+        TokenKind::KeyWord if token == *"&" => parse_bind_expr(p),
         TokenKind::Interger => {
             let val = token
                 .value
@@ -218,6 +283,7 @@ fn parse_expr(p: &mut Parser, token: Token) -> Operation {
         }
         TokenKind::KeyWord if token == *"drop" => Operation::Drop,
         TokenKind::KeyWord if token == *"debug" => Operation::Debug,
+        TokenKind::KeyWord if token == *"dup" => Operation::Dup,
         TokenKind::Intrinsic => Operation::Intrinsic(token.value),
         TokenKind::Word => Operation::Word(token.value),
         _ => {
@@ -235,6 +301,15 @@ impl Parser {
             return Ok(token);
         }
         Err(token.loc)
+    }
+
+    #[allow(dead_code)]
+    fn peek(&mut self) -> &Token {
+        if self.peeked.is_none() {
+            self.peeked = Some(self.next());
+        }
+
+        self.peeked.as_ref().unwrap()
     }
 
     fn next(&mut self) -> Token {
@@ -256,16 +331,19 @@ impl Parser {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Operation {
     Drop,
     Debug,
+    Dup,
     Word(String),                                                     // Word
     Intrinsic(String),                                                // Symbol
     PushI(i32),                                                       // Literal
     If(Rc<[Self]>),                                                   // Body
-    Else(Rc<[Self]>),                                                 // Body
+    IfElse(Rc<[Self]>, Rc<[Self]>),                                   // Body1 Body2
     While(Rc<[Self]>, Rc<[Self]>),                                    // cond Body
-    Bind(String, Rc<[String]>),                                       // name type
+    Bind(u32),                                                        // index
+    Assing(String, Rc<[String]>),                                     // name type
+    Let(String, Rc<[String]>, Rc<[Self]>),                            // name type value
     Fn(String, Rc<[String]>, Rc<[String]>, Rc<[String]>, Rc<[Self]>), // name args ins outs body
 }
