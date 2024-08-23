@@ -1,4 +1,24 @@
-- [] `&n` copy relative value from stack
+- [ ] New syntax pattern `<Keyword> <Value> : <Types> = <Word>`
+
+```haskell
+let 10 : int = foo
+
+const 1 : int = STDOUT
+
+type : int option list = FOO
+
+struct x y :
+    int
+    int
+= Vector2
+
+fn a b : int int -> int = add {
+  a b +
+}
+
+```
+
+- [X] `&n` copy relative value from stack
 
 ```haskell
 1 2 &1 -- 1 2 2
