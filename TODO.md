@@ -1,5 +1,7 @@
 - [ ] Update parser to support consts like `const 1 : int = STDOUT`
 
+- [ ] Update operations to struct with token field for error reporting
+
 - [ ] Update vmv2 to support functions and let-bindings
 
 - [ ] Improve typecheck errors
