@@ -27,4 +27,12 @@ version = "0.1.0"
 dependencies = [
  "chs_parser",
  "chs_vm_v2",
+ "type_check",
+]
+
+[[package]]
+name = "type_check"
+version = "0.1.0"
+dependencies = [
+ "chs_parser",
 ]

@@ -1,10 +1,7 @@
 [package]
-name = "chsi"
+name = "type_check"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-
 chs_parser = { path = "../chs_parser" }
-chs_vm_v2 = { path = "../chs_vm_v2" }
-type_check = { path = "../type_check" }

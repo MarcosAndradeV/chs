@@ -15,6 +15,7 @@ fn main() {
             let _ = file.read_to_end(&mut buf);
             let program = parse_file(buf, filepath);
             // dbg!(program);
+            type_check::check_program(&program);
             let b = compile(program);
             vm_run(b);
         } else {
