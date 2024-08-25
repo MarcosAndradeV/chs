@@ -20,6 +20,9 @@ version = "0.1.0"
 [[package]]
 name = "chs_vm_v2"
 version = "0.1.0"
+dependencies = [
+ "memory",
+]
 
 [[package]]
 name = "chsi"
@@ -29,6 +32,10 @@ dependencies = [
  "chs_vm_v2",
  "type_check",
 ]
+
+[[package]]
+name = "memory"
+version = "0.1.0"
 
 [[package]]
 name = "type_check"

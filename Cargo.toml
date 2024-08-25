@@ -6,6 +6,7 @@ members = [
     "chs_vm",
     "chs_vm_v2",
     "type_check",
+    "memory",
 ]
 resolver = "2"
 
