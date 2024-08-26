@@ -5,8 +5,11 @@ pub enum Instr {
     Debug,
     Dup,
     PlusI,
+    MultI,
     EqI,
     NEqI,
+    Ret,
+    Call(usize),   // addr
     Bind(u32),     // Relative Position
     PushI32(i32),  // Immediate
     Jmp(isize),    // Relative Address

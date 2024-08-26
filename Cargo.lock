@@ -21,6 +21,7 @@ version = "0.1.0"
 name = "chs_vm_v2"
 version = "0.1.0"
 dependencies = [
+ "chs_parser",
  "memory",
 ]
 

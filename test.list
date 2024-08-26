@@ -1,1 +1,2 @@
+./target/debug/chsi tests/fns.chs
 ./target/debug/chsi tests/while_test.chs

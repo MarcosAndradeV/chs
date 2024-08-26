@@ -1,3 +1,4 @@
+pub mod compiler;
 pub mod instructions;
 use core::fmt;
 use std::marker::PhantomData;
@@ -61,8 +62,8 @@ impl VMStack<Value> {
 pub fn vm_run(program: Bytecode) {
     // let mut stack: Vec<Value> = Vec::with_capacity(1024);
     let mut stack = VMStack::<Value>::new(1024);
+    let mut rstack: Vec<usize> = Vec::with_capacity(1024);
     // let mut tstack: Vec<Value> = Vec::with_capacity(1024);
-    // let mut rstack: Vec<usize> = Vec::with_capacity(1024);
     let mut ip = program.entry;
     // for p in &program.program { println!("{:?}", p) }
     loop {
@@ -109,6 +110,11 @@ pub fn vm_run(program: Bytecode) {
                 let b = stack.pop();
                 stack.push(a + b);
             }
+            Instr::MultI => {
+                let a = stack.pop();
+                let b = stack.pop();
+                stack.push(a * b);
+            }
             Instr::EqI => {
                 let a = stack.pop();
                 let b = stack.pop();
@@ -123,6 +129,16 @@ pub fn vm_run(program: Bytecode) {
                 let rel = rel as usize * size_of::<Value>();
                 assert!(stack.len() >= rel && rel <= stack.top);
                 stack.push(stack.data.read((stack.top + rel) - size_of::<Value>()));
+            }
+            Instr::Ret => {
+                next_addr = match rstack.pop() {
+                    Some(o) => o,
+                    None => break,
+                };
+            }
+            Instr::Call(addr) => {
+                rstack.push(next_addr);
+                next_addr = addr;
             }
         }
         ip = next_addr

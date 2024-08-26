@@ -57,11 +57,26 @@ fn parse_fn_expr(p: &mut Parser) -> Operation {
             }
         }
     }
-    let mut ins: Vec<String> = vec![];
+    let mut ins: Vec<DataType> = vec![];
     loop {
         match p.require() {
             Ok(token) if token == *"->" => break,
-            Ok(token) if token.kind == TokenKind::Word => ins.push(token.value),
+            Ok(token) if token.kind == TokenKind::Word => {
+                let typ = match token.value.as_str() {
+                    "ptr" => DataType::Ptr,
+                    "int" => DataType::Int,
+                    "bool" => DataType::Bool,
+                    _ => {
+                        eprintln!(
+                            "Error:\n  Expect Type but got `{}` in {}{}",
+                            token.value, p.filepath, token.loc
+                        );
+                        exit(-1);
+                    }
+                };
+
+                ins.push(typ);
+            }
             Ok(token) => {
                 eprintln!(
                     "Error:\n  Expect Type but got `{}` in {}{}",
@@ -75,11 +90,26 @@ fn parse_fn_expr(p: &mut Parser) -> Operation {
             }
         }
     }
-    let mut outs: Vec<String> = vec![];
+    let mut outs: Vec<DataType> = vec![];
     loop {
         match p.require() {
             Ok(token) if token == *"{" => break,
-            Ok(token) if token.kind == TokenKind::Word => outs.push(token.value),
+            Ok(token) if token.kind == TokenKind::Word => {
+                let typ = match token.value.as_str() {
+                    "ptr" => DataType::Ptr,
+                    "int" => DataType::Int,
+                    "bool" => DataType::Bool,
+                    _ => {
+                        eprintln!(
+                            "Error:\n  Expect Type but got `{}` in {}{}",
+                            token.value, p.filepath, token.loc
+                        );
+                        exit(-1);
+                    }
+                };
+
+                outs.push(typ);
+            }
             Ok(token) => {
                 eprintln!(
                     "Error:\n  Expect Type but got `{}` in {}{}",
@@ -281,9 +311,7 @@ fn parse_expr(p: &mut Parser, token: Token) -> Operation {
                 .expect("ParseInt");
             Operation::PushI(val)
         }
-        TokenKind::KeyWord if token == *"drop" => Operation::Drop,
         TokenKind::KeyWord if token == *"debug" => Operation::Debug,
-        TokenKind::KeyWord if token == *"dup" => Operation::Dup,
         TokenKind::Intrinsic => Operation::Intrinsic(token.value),
         TokenKind::Word => Operation::Word(token.value),
         _ => {
@@ -331,19 +359,30 @@ impl Parser {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DataType {
+    Int,
+    Ptr,
+    Bool,
+}
+
 #[derive(Debug, Clone)]
 pub enum Operation {
-    Drop,
     Debug,
-    Dup,
-    Word(String),                                                     // Word
-    Intrinsic(String),                                                // Symbol
-    PushI(i32),                                                       // Literal
-    If(Rc<[Self]>),                                                   // Body
-    IfElse(Rc<[Self]>, Rc<[Self]>),                                   // Body1 Body2
-    While(Rc<[Self]>, Rc<[Self]>),                                    // cond Body
-    Bind(u32),                                                        // index
-    Assing(String, Rc<[String]>),                                     // name type
-    Let(String, Rc<[String]>, Rc<[Self]>),                            // name type value
-    Fn(String, Rc<[String]>, Rc<[String]>, Rc<[String]>, Rc<[Self]>), // name args ins outs body
+    Word(String),                          // Word
+    Intrinsic(String),                     // Symbol
+    PushI(i32),                            // Literal
+    If(Rc<[Self]>),                        // Body
+    IfElse(Rc<[Self]>, Rc<[Self]>),        // Body1 Body2
+    While(Rc<[Self]>, Rc<[Self]>),         // cond Body
+    Bind(u32),                             // index
+    Assing(String, Rc<[String]>),          // name type
+    Let(String, Rc<[String]>, Rc<[Self]>), // name type value
+    Fn(
+        String,
+        Rc<[String]>,
+        Rc<[DataType]>,
+        Rc<[DataType]>,
+        Rc<[Self]>,
+    ), // name args ins outs body
 }

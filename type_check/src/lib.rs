@@ -1,13 +1,6 @@
-use std::process::exit;
+use std::{collections::HashMap, process::exit};
 
-use chs_parser::Operation;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum DataType {
-    Int,
-    Ptr,
-    Bool,
-}
+use chs_parser::{DataType, Operation};
 
 type TypeStack = Vec<DataType>;
 
@@ -15,6 +8,7 @@ type TypeStack = Vec<DataType>;
 struct TypeContext {
     stack: TypeStack,
     ip: usize,
+    fndefs: HashMap<String, usize>,
 }
 
 pub fn check_program(program: &Vec<Operation>) {
@@ -25,32 +19,37 @@ pub fn check_program(program: &Vec<Operation>) {
 fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
     while ctx.ip < program.len() {
         match &program[ctx.ip] {
-            Operation::Drop => {
-                // (any ->)
-                if ctx.stack.len() < 1 {
-                    eprintln!("Drop TODO");
-                    exit(-1);
-                }
-                let _ = ctx.stack.pop();
-                ctx.ip += 1;
-                continue;
-            }
             Operation::Debug => {
                 ctx.ip += 1;
                 continue;
             }
-            Operation::Dup => {
-                // (any -> any any)
-                if ctx.stack.len() < 1 {
-                    eprintln!("Dup TODO");
+
+            Operation::Word(name) => {
+                if let Some(fnn) = ctx.fndefs.get(name) {
+                    if let Operation::Fn(_, _, ins, outs, _) = &program[*fnn] {
+                        for expect in ins.iter().rev() {
+                            if let Some(actual) = ctx.stack.pop() {
+                                if actual != *expect {
+                                    eprintln!(
+                                        "Expected Type {:?} got {:?} in {}",
+                                        expect, actual, name
+                                    );
+                                    exit(-1);
+                                }
+                            } else {
+                                eprintln!("Unsifsient data on stack for fn {}", name);
+                                exit(-1);
+                            }
+                        }
+                        ctx.stack.extend(outs.iter());
+                    }
+                } else {
+                    eprintln!("Unkwon word {}", name);
                     exit(-1);
                 }
-                let a = ctx.stack.last().unwrap().clone();
-                ctx.stack.push(a);
                 ctx.ip += 1;
                 continue;
             }
-            Operation::Word(_) => todo!(),
             Operation::Intrinsic(s) => {
                 check_intrinsic(s, ctx);
                 ctx.ip += 1;
@@ -135,13 +134,74 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
             }
             Operation::Assing(_, _) => todo!(),
             Operation::Let(_, _, _) => todo!(),
-            Operation::Fn(_, _, _, _, _) => todo!(),
+            Operation::Fn(name, _, ins, outs, body) => {
+                let redef = ctx.fndefs.insert(name.clone(), ctx.ip);
+                if redef.is_some() {
+                    eprintln!("REdefinition of fn {}", name);
+                    exit(-1);
+                }
+                let mut fn_ctx = TypeContext::default();
+                fn_ctx.stack.extend(&ins.to_vec());
+                check_program_ops(&mut fn_ctx, &body.to_vec());
+                for actual in outs.iter().rev() {
+                    if let Some(expect) = fn_ctx.stack.pop() {
+                        if *actual != expect {
+                            eprintln!("Expected Type {:?} got {:?} in {}", expect, actual, name);
+                            exit(-1);
+                        }
+                    } else {
+                        eprintln!("Unsifsient data on stack for fn {}", name);
+                        exit(-1);
+                    }
+                }
+                ctx.ip += 1;
+                continue;
+            }
         }
     }
 }
 
 fn check_intrinsic(s: &String, ctx: &mut TypeContext) {
     match s.as_str() {
+        "drop" => {
+            // (any ->)
+            if ctx.stack.len() < 1 {
+                eprintln!("Drop TODO");
+                exit(-1);
+            }
+            let _ = ctx.stack.pop();
+        }
+        "dup" => {
+            // (any -> any any)
+            if ctx.stack.len() < 1 {
+                eprintln!("Dup TODO");
+                exit(-1);
+            }
+            let a = ctx.stack.last().unwrap().clone();
+            ctx.stack.push(a);
+        }
+        "*" => {
+            // (int int -> int)
+            if ctx.stack.len() < 2 {
+                eprintln!("Args + TODO");
+                exit(-1);
+            }
+            if let Some(frame) = ctx.stack.pop() {
+                // b
+                if frame != DataType::Int {
+                    eprintln!("Typeof b * Actual: {:?} TODO", frame);
+                    exit(-1);
+                }
+            }
+            if let Some(frame) = ctx.stack.pop() {
+                // a
+                if frame != DataType::Int {
+                    eprintln!("Typeof a * TODO");
+                    exit(-1);
+                }
+            }
+            ctx.stack.push(DataType::Int)
+        }
         "+" => {
             // (int int -> int)
             if ctx.stack.len() < 2 {
@@ -149,16 +209,16 @@ fn check_intrinsic(s: &String, ctx: &mut TypeContext) {
                 exit(-1);
             }
             if let Some(frame) = ctx.stack.pop() {
-                // a
+                // b
                 if frame != DataType::Int {
-                    eprintln!("Typeof a + TODO");
+                    eprintln!("Typeof b + Actual: {:?} TODO", frame);
                     exit(-1);
                 }
             }
             if let Some(frame) = ctx.stack.pop() {
-                // b
+                // a
                 if frame != DataType::Int {
-                    eprintln!("Typeof b + Actual: {:?} TODO", frame);
+                    eprintln!("Typeof a + TODO");
                     exit(-1);
                 }
             }
@@ -171,7 +231,7 @@ fn check_intrinsic(s: &String, ctx: &mut TypeContext) {
                 exit(-1);
             }
             if let Some(frame) = ctx.stack.pop() {
-                // a
+                // b
                 if frame != DataType::Int {
                     eprintln!("!= TODO");
                     exit(-1);
@@ -181,7 +241,7 @@ fn check_intrinsic(s: &String, ctx: &mut TypeContext) {
                 exit(-1);
             }
             if let Some(frame) = ctx.stack.pop() {
-                // b
+                // a
                 if frame != DataType::Int {
                     eprintln!("!= TODO");
                     exit(-1);
@@ -192,6 +252,9 @@ fn check_intrinsic(s: &String, ctx: &mut TypeContext) {
             }
             ctx.stack.push(DataType::Bool)
         }
-        _ => todo!(),
+        a => {
+            eprintln!("Unkwon instrinsic {}", a);
+            exit(-1);
+        }
     }
 }
