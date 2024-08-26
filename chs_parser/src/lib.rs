@@ -314,6 +314,13 @@ fn parse_expr(p: &mut Parser, token: Token) -> Operation {
         TokenKind::KeyWord if token == *"debug" => Operation::Debug,
         TokenKind::Intrinsic => Operation::Intrinsic(token.value),
         TokenKind::Word => Operation::Word(token.value),
+        TokenKind::KeyWord => {
+            eprintln!(
+                "Error:\n  Unexpect KeyWord `{}` in {}{}",
+                token.value, p.filepath, token.loc
+            );
+            exit(-1)
+        }
         _ => {
             dbg!(token);
             exit(-1)
