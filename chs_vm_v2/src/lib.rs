@@ -63,7 +63,7 @@ pub fn vm_run(program: Bytecode) {
     // let mut stack: Vec<Value> = Vec::with_capacity(1024);
     let mut stack = VMStack::<Value>::new(1024);
     let mut rstack: Vec<usize> = Vec::with_capacity(1024);
-    // let mut tstack: Vec<Value> = Vec::with_capacity(1024);
+    let mut mem = Memory::new(program.program_mem);
     let mut ip = program.entry;
     // for p in &program.program { println!("{:?}", p) }
     loop {
@@ -76,6 +76,7 @@ pub fn vm_run(program: Bytecode) {
                 next_addr = program.program.len();
             }
             Instr::PushI32(v) => stack.push(v as u64),
+            Instr::PushPtr(v) => stack.push(v as u64),
             Instr::Drop => {
                 stack.pop();
             }
@@ -107,29 +108,45 @@ pub fn vm_run(program: Bytecode) {
             }
             Instr::Write(bytes) => {
                 let b = stack.pop(); // value
-                let a = stack.pop(); // ptr
-                unsafe {
-                    match bytes {
-                        64 => *(a as *mut u64) = b,
-                        32 => *(a as *mut u32) = b as u32,
-                        16 => *(a as *mut u16) = b as u16,
-                        8 => *(a as *mut u8) = b as u8,
-                        _ => todo!(),
-                    }
+                let a = stack.pop() as usize; // ptr
+                match bytes {
+                    64 => mem.write(a, b as u64),
+                    32 => mem.write(a, b as u32),
+                    16 => mem.write(a, b as u16),
+                    08 => mem.write(a, b as u8),
+                    _ => todo!(),
                 }
+                // unsafe {
+                //     match bytes {
+                //         64 => *(a as *mut u64) = b,
+                //         32 => *(a as *mut u32) = b as u32,
+                //         16 => *(a as *mut u16) = b as u16,
+                //         8 => *(a as *mut u8) = b as u8,
+                //         _ => todo!(),
+                //     }
+                // }
             }
             Instr::Read(bytes) => {
-                let a = stack.pop(); // ptr
-                unsafe {
-                    let value = match bytes {
-                        64 => *(a as *mut u64) as u64,
-                        32 => *(a as *mut u32) as u64,
-                        16 => *(a as *mut u16) as u64,
-                        8 => *(a as *mut u8) as u64,
-                        _ => todo!(),
-                    };
-                    stack.push(value);
-                }
+                let a = stack.pop() as usize; // ptr
+                let value = match bytes {
+                    64 => mem.read::<u64>(a) as u64,
+                    32 => mem.read::<u32>(a) as u64,
+                    16 => mem.read::<u16>(a) as u64,
+                    08 => mem.read::<u8>(a) as u64,
+                    _ => todo!(),
+                };
+                stack.push(value);
+
+                // unsafe {
+                //     let value = match bytes {
+                //         64 => *(a as *mut u64) as u64,
+                //         32 => *(a as *mut u32) as u64,
+                //         16 => *(a as *mut u16) as u64,
+                //         8 => *(a as *mut u8) as u64,
+                //         _ => todo!(),
+                //     };
+                //     stack.push(value);
+                // }
             }
             Instr::Debug => {
                 println!("Debug:\nData Stack: {}", stack);

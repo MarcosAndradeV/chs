@@ -9,6 +9,7 @@ struct TypeContext {
     stack: TypeStack,
     ip: usize,
     fndefs: HashMap<String, usize>,
+    memdefs: HashMap<String, usize>,
 }
 
 pub fn check_program(program: &Vec<Operation>) {
@@ -25,6 +26,11 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
     while ctx.ip < program.len() {
         match &program[ctx.ip] {
             Operation::Debug => {
+                ctx.ip += 1;
+                continue;
+            }
+            Operation::Alloc(name, _) => {
+                ctx.memdefs.insert(name.clone(), 0);
                 ctx.ip += 1;
                 continue;
             }
@@ -50,6 +56,8 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
 
                         ctx.stack.extend(outs.iter());
                     }
+                } else if ctx.memdefs.contains_key(name) {
+                    ctx.stack.push(DataType::Ptr);
                 } else {
                     eprintln!("Unkwon word {}", name);
                     exit(-1);

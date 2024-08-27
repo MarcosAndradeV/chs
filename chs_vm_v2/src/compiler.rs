@@ -8,6 +8,8 @@ use crate::instructions::{Bytecode, Instr};
 struct CompCtx {
     instr: Vec<Instr>,
     fn_def: HashMap<String, usize>,
+    mem_def: HashMap<String, usize>,
+    mem_size: usize,
 }
 
 pub fn compile(ops: Vec<Operation>) -> Bytecode {
@@ -18,6 +20,7 @@ pub fn compile(ops: Vec<Operation>) -> Bytecode {
     }
     Bytecode {
         program: ctx.instr,
+        program_mem: ctx.mem_size,
         entry: 0,
     }
 }
@@ -26,6 +29,10 @@ fn compile_op(ctx: &mut CompCtx, op: Operation) {
     match op {
         Operation::PushI(i) => ctx.instr.push(Instr::PushI32(i)),
         Operation::Debug => ctx.instr.push(Instr::Debug),
+        Operation::Alloc(name, size) => {
+            ctx.mem_def.insert(name, ctx.mem_size);
+            ctx.mem_size += size;
+        }
         Operation::If(body) => {
             let offset = ctx.instr.len();
             ctx.instr.push(Instr::JmpIf(0));
@@ -82,6 +89,8 @@ fn compile_op(ctx: &mut CompCtx, op: Operation) {
         Operation::Intrinsic(a) if a.as_str() == "over" => ctx.instr.push(Instr::Over),
         Operation::Intrinsic(a) if a.as_str() == "rot" => ctx.instr.push(Instr::Rot),
         Operation::Intrinsic(a) if a.as_str() == "swap" => ctx.instr.push(Instr::Swap),
+        Operation::Write(a) => ctx.instr.push(Instr::Write(a)),
+        Operation::Read(a) => ctx.instr.push(Instr::Read(a)),
         Operation::Fn(name, _args, _, _, body) => {
             let addrs = ctx.instr.len();
             ctx.instr.push(Instr::Jmp(0));
@@ -98,6 +107,8 @@ fn compile_op(ctx: &mut CompCtx, op: Operation) {
         Operation::Word(name) => {
             if let Some(fnn) = ctx.fn_def.get(&name) {
                 ctx.instr.push(Instr::Call(*fnn));
+            } else if let Some(mem) = ctx.mem_def.get(&name) {
+                ctx.instr.push(Instr::PushPtr(*mem));
             }
         }
         e => {

@@ -24,6 +24,7 @@ pub fn parse_file(input: Vec<u8>, filepath: String) -> Vec<Operation> {
         }
         ops.push(match token.kind {
             TokenKind::KeyWord if token == *"fn" => parse_fn_expr(&mut p),
+            TokenKind::KeyWord if token == *"alloc" => parse_alloc_expr(&mut p),
 
             // TokenKind::OpenCurly => continue,
             _ => parse_expr(&mut p, token),
@@ -136,6 +137,63 @@ fn parse_fn_expr(p: &mut Parser) -> Operation {
         }
     }
     Operation::Fn(name, args.into(), ins.into(), outs.into(), body.into())
+}
+
+fn parse_alloc_expr(p: &mut Parser) -> Operation {
+    let mut value = vec![];
+    loop {
+        match p.require() {
+            Ok(token) if token == *":" => break,
+            Ok(token) if token.kind == TokenKind::Interger => {
+                let val = token
+                    .value
+                    .parse()
+                    .map_err(|e| eprintln!("ParseIntError: {} in {:?}", e, token))
+                    .expect("ParseInt");
+                value.push(val);
+            }
+            Ok(token) if token == *"+" => {
+                todo!();
+            }
+            Ok(token) if token == *"*" => {
+                todo!();
+            }
+            Ok(token) => {
+                eprintln!(
+                    "Error:\n  Expect Interger, `+` of `*` but got {:?} in {}{}",
+                    token.kind, p.filepath, token.loc
+                );
+                exit(-1);
+            }
+            Err(e) => {
+                eprintln!("Error:\n  Expect `:` but got EOF in {}{}", p.filepath, e);
+                exit(-1);
+            }
+        }
+    }
+
+    match p.require() {
+        Ok(token) if token == *"=" => {}
+        Ok(token) => {
+            eprintln!(
+                "Error:\n  Expect `=` but got {:?} in {}{}",
+                token.kind, p.filepath, token.loc
+            );
+            exit(-1);
+        }
+        Err(e) => {
+            eprintln!("Error:\n  Expect `=` but got EOF in {}{}", p.filepath, e);
+            exit(-1);
+        }
+    }
+
+    match p.expect(TokenKind::Word) {
+        Ok(token) => Operation::Alloc(token.value, value[0]),
+        Err(e) => {
+            eprintln!("Error:\n  Expect a Word in {}{}", p.filepath, e);
+            exit(-1);
+        }
+    }
 }
 
 fn parse_assing_expr(p: &mut Parser) -> Operation {
@@ -423,6 +481,7 @@ pub enum DataType {
 #[derive(Debug, Clone)]
 pub enum Operation {
     Debug,
+    Alloc(String, usize),                  // Name Size
     Read(usize),                           // Bytes
     Write(usize),                          // Bytes
     Word(String),                          // Word

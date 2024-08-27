@@ -5,8 +5,8 @@ use std::{
 
 #[derive(Debug)]
 pub struct Memory {
-    inner: *mut u8, // Vec<u8>,
-    layout: Layout, // TODO: Remove this
+    pub inner: *mut u8, // Vec<u8>,
+    layout: Layout,     // TODO: Remove this
     write_pos: usize,
     size: usize,
 }

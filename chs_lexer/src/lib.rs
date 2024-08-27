@@ -8,7 +8,7 @@ pub struct Lexer {
 }
 
 const KEYWORDS: &[&'static str] = &[
-    "debug", "if", "else", "while", "fn", "let", ":", "=", "->", "&",
+    "debug", "if", "else", "while", "fn", "let", "alloc", ":", "=", "->", "&",
 ];
 const INTRISIC: &[u8] = &[b'+', b'-', b'*', b'=', b':', b'>', b'<', b'!', b'@'];
 
