@@ -73,10 +73,15 @@ fn compile_op(ctx: &mut CompCtx, op: Operation) {
         Operation::Bind(n) => ctx.instr.push(Instr::Bind(n)),
         Operation::Intrinsic(a) if a.as_str() == "+" => ctx.instr.push(Instr::PlusI),
         Operation::Intrinsic(a) if a.as_str() == "*" => ctx.instr.push(Instr::MultI),
+        Operation::Intrinsic(a) if a.as_str() == "mod" => ctx.instr.push(Instr::Mod),
         Operation::Intrinsic(a) if a.as_str() == "==" => ctx.instr.push(Instr::EqI),
         Operation::Intrinsic(a) if a.as_str() == "!=" => ctx.instr.push(Instr::NEqI),
+        Operation::Intrinsic(a) if a.as_str() == "<" => ctx.instr.push(Instr::Lt),
         Operation::Intrinsic(a) if a.as_str() == "drop" => ctx.instr.push(Instr::Drop),
         Operation::Intrinsic(a) if a.as_str() == "dup" => ctx.instr.push(Instr::Dup),
+        Operation::Intrinsic(a) if a.as_str() == "over" => ctx.instr.push(Instr::Over),
+        Operation::Intrinsic(a) if a.as_str() == "rot" => ctx.instr.push(Instr::Rot),
+        Operation::Intrinsic(a) if a.as_str() == "swap" => ctx.instr.push(Instr::Swap),
         Operation::Fn(name, _args, _, _, body) => {
             let addrs = ctx.instr.len();
             ctx.instr.push(Instr::Jmp(0));

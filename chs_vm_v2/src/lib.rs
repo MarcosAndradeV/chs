@@ -84,6 +84,53 @@ pub fn vm_run(program: Bytecode) {
                 stack.push(a);
                 stack.push(a);
             }
+            Instr::Swap => {
+                let b = stack.pop();
+                let a = stack.pop();
+                stack.push(b);
+                stack.push(a);
+            }
+            Instr::Over => {
+                let b = stack.pop();
+                let a = stack.pop();
+                stack.push(a);
+                stack.push(b);
+                stack.push(a);
+            }
+            Instr::Rot => {
+                let c = stack.pop();
+                let b = stack.pop();
+                let a = stack.pop();
+                stack.push(b);
+                stack.push(c);
+                stack.push(a);
+            }
+            Instr::Write(bytes) => {
+                let b = stack.pop(); // value
+                let a = stack.pop(); // ptr
+                unsafe {
+                    match bytes {
+                        64 => *(a as *mut u64) = b,
+                        32 => *(a as *mut u32) = b as u32,
+                        16 => *(a as *mut u16) = b as u16,
+                        8 => *(a as *mut u8) = b as u8,
+                        _ => todo!(),
+                    }
+                }
+            }
+            Instr::Read(bytes) => {
+                let a = stack.pop(); // ptr
+                unsafe {
+                    let value = match bytes {
+                        64 => *(a as *mut u64) as u64,
+                        32 => *(a as *mut u32) as u64,
+                        16 => *(a as *mut u16) as u64,
+                        8 => *(a as *mut u8) as u64,
+                        _ => todo!(),
+                    };
+                    stack.push(value);
+                }
+            }
             Instr::Debug => {
                 println!("Debug:\nData Stack: {}", stack);
             }
@@ -106,24 +153,34 @@ pub fn vm_run(program: Bytecode) {
                 }
             }
             Instr::PlusI => {
-                let a = stack.pop();
                 let b = stack.pop();
+                let a = stack.pop();
                 stack.push(a + b);
             }
             Instr::MultI => {
-                let a = stack.pop();
                 let b = stack.pop();
+                let a = stack.pop();
                 stack.push(a * b);
             }
-            Instr::EqI => {
-                let a = stack.pop();
+            Instr::Mod => {
                 let b = stack.pop();
+                let a = stack.pop();
+                stack.push(a % b);
+            }
+            Instr::EqI => {
+                let b = stack.pop();
+                let a = stack.pop();
                 stack.push((a == b) as u64);
             }
             Instr::NEqI => {
-                let a = stack.pop();
                 let b = stack.pop();
+                let a = stack.pop();
                 stack.push((a != b) as u64);
+            }
+            Instr::Lt => {
+                let b = stack.pop();
+                let a = stack.pop();
+                stack.push((a < b) as u64);
             }
             Instr::Bind(rel) => {
                 let rel = rel as usize * size_of::<Value>();

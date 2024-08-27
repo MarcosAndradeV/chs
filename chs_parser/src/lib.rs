@@ -25,6 +25,7 @@ pub fn parse_file(input: Vec<u8>, filepath: String) -> Vec<Operation> {
         ops.push(match token.kind {
             TokenKind::KeyWord if token == *"fn" => parse_fn_expr(&mut p),
 
+            // TokenKind::OpenCurly => continue,
             _ => parse_expr(&mut p, token),
         })
     }
@@ -206,6 +207,7 @@ fn parse_if_expr(p: &mut Parser) -> Operation {
                 }
             }
             if p.peek() == "else" {
+                p.next();
                 match p.expect(TokenKind::OpenCurly) {
                     Ok(_) => {
                         let mut elsebody: Vec<Operation> = vec![];
@@ -256,6 +258,40 @@ fn parse_bind_expr(p: &mut Parser) -> Operation {
     }
 }
 
+fn parse_read_expr(p: &mut Parser) -> Operation {
+    match p.expect(TokenKind::Interger) {
+        Ok(token) => {
+            let val = token
+                .value
+                .parse()
+                .map_err(|e| eprintln!("ParseIntError: {} in {:?}", e, token))
+                .expect("ParseInt");
+            Operation::Read(val)
+        }
+        Err(e) => {
+            eprintln!("Error:\n  Expect `{{` after `else` in {}{}", p.filepath, e);
+            exit(-1)
+        }
+    }
+}
+
+fn parse_write_expr(p: &mut Parser) -> Operation {
+    match p.expect(TokenKind::Interger) {
+        Ok(token) => {
+            let val = token
+                .value
+                .parse()
+                .map_err(|e| eprintln!("ParseIntError: {} in {:?}", e, token))
+                .expect("ParseInt");
+            Operation::Write(val)
+        }
+        Err(e) => {
+            eprintln!("Error:\n  Expect `{{` after `else` in {}{}", p.filepath, e);
+            exit(-1)
+        }
+    }
+}
+
 fn parse_let_expr(p: &mut Parser) -> Operation {
     let mut value: Vec<Operation> = vec![];
     loop {
@@ -297,12 +333,15 @@ fn parse_let_expr(p: &mut Parser) -> Operation {
 }
 
 fn parse_expr(p: &mut Parser, token: Token) -> Operation {
+    //dbg!(&token);
     match token.kind {
         TokenKind::KeyWord if token == *"if" => parse_if_expr(p),
         TokenKind::KeyWord if token == *"while" => parse_while_expr(p),
         TokenKind::KeyWord if token == *":" => parse_assing_expr(p),
         TokenKind::KeyWord if token == *"let" => parse_let_expr(p),
         TokenKind::KeyWord if token == *"&" => parse_bind_expr(p),
+        TokenKind::Intrinsic if token == *"@" => parse_read_expr(p),
+        TokenKind::Intrinsic if token == *"!" => parse_write_expr(p),
         TokenKind::Interger => {
             let val = token
                 .value
@@ -322,8 +361,13 @@ fn parse_expr(p: &mut Parser, token: Token) -> Operation {
             exit(-1)
         }
         _ => {
-            dbg!(token);
-            exit(-1)
+            unimplemented!(
+                "Error:\n  Unimplemented {:?} `{}` in {}{}",
+                token.kind,
+                token.value,
+                p.filepath,
+                token.loc
+            );
         }
     }
 }
@@ -349,7 +393,10 @@ impl Parser {
 
     fn next(&mut self) -> Token {
         loop {
-            let token = self.lexer.next_token();
+            let token = self
+                .peeked
+                .take()
+                .unwrap_or_else(|| self.lexer.next_token());
 
             match token.kind {
                 TokenKind::Whitespace | TokenKind::Comment => {}
@@ -376,6 +423,8 @@ pub enum DataType {
 #[derive(Debug, Clone)]
 pub enum Operation {
     Debug,
+    Read(usize),                           // Bytes
+    Write(usize),                          // Bytes
     Word(String),                          // Word
     Intrinsic(String),                     // Symbol
     PushI(i32),                            // Literal

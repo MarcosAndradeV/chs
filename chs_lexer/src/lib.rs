@@ -10,7 +10,7 @@ pub struct Lexer {
 const KEYWORDS: &[&'static str] = &[
     "debug", "if", "else", "while", "fn", "let", ":", "=", "->", "&",
 ];
-const INTRISIC: &[u8] = &[b'+', b'-', b'*', b'=', b':', b'>', b'<', b'!'];
+const INTRISIC: &[u8] = &[b'+', b'-', b'*', b'=', b':', b'>', b'<', b'!', b'@'];
 
 impl Lexer {
     pub fn new(data: Vec<u8>) -> Self {
@@ -109,7 +109,7 @@ impl Lexer {
         let value = String::from_utf8_lossy(&self.data[start..self.pos]).to_string();
         match value.as_str() {
             c if KEYWORDS.contains(&c) => Token::new(value, TokenKind::KeyWord, start_loc),
-            "dup" | "drop" | "swap" | "over" | "rot" => {
+            "dup" | "drop" | "swap" | "over" | "rot" | "mod" => {
                 Token::new(value, TokenKind::Intrinsic, start_loc)
             }
             _ => Token::new(value, TokenKind::Word, start_loc),

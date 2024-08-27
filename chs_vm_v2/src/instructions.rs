@@ -2,13 +2,20 @@
 pub enum Instr {
     Halt,
     Drop,
-    Debug,
     Dup,
+    Rot,
+    Over,
+    Swap,
+    Debug,
     PlusI,
     MultI,
+    Mod,
+    Lt,
     EqI,
     NEqI,
     Ret,
+    Write(usize),  // Bytes
+    Read(usize),   // Bytes
     Call(usize),   // addr
     Bind(u32),     // Relative Position
     PushI32(i32),  // Immediate
