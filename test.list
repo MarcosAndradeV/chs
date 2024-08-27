@@ -1,3 +1,4 @@
 ./target/debug/chsi tests/fns.chs
 ./target/debug/chsi tests/gcd.chs
+./target/debug/chsi tests/while_alloc.chs
 ./target/debug/chsi tests/while_test.chs

@@ -327,7 +327,10 @@ fn parse_read_expr(p: &mut Parser) -> Operation {
             Operation::Read(val)
         }
         Err(e) => {
-            eprintln!("Error:\n  Expect `{{` after `else` in {}{}", p.filepath, e);
+            eprintln!(
+                "Error:\n  Expect number of bytes after `@` in {}{}",
+                p.filepath, e
+            );
             exit(-1)
         }
     }
@@ -344,7 +347,10 @@ fn parse_write_expr(p: &mut Parser) -> Operation {
             Operation::Write(val)
         }
         Err(e) => {
-            eprintln!("Error:\n  Expect `{{` after `else` in {}{}", p.filepath, e);
+            eprintln!(
+                "Error:\n  Expect number of bytes `!` in {}{}",
+                p.filepath, e
+            );
             exit(-1)
         }
     }

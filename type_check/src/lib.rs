@@ -36,7 +36,7 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
             }
             Operation::Word(name) => {
                 if let Some(fnn) = ctx.fndefs.get(name) {
-                    if let Operation::Fn(_, _, ins, outs, _) = &program[*fnn] {
+                    if let Some(Operation::Fn(_, _, ins, outs, _)) = program.get(*fnn) {
                         if ins.len() > ctx.stack.len() {
                             eprintln!("Unsifsient data on stack for fn {}", name);
                             exit(-1);
@@ -53,7 +53,6 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
 
                         ctx.stack
                             .truncate(ctx.stack.len().saturating_sub(ins.len()));
-
                         ctx.stack.extend(outs.iter());
                     }
                 } else if ctx.memdefs.contains_key(name) {
@@ -78,20 +77,25 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
             Operation::Write(_) => {
                 // (ptr int -> )
                 if ctx.stack.len() < 2 {
-                    eprintln!("Not enough arguments for `!` TODO");
+                    eprintln!("Not enough arguments for `!`.");
                     exit(-1);
                 }
-                if let Some(frame) = ctx.stack.pop() {
+                if let Some(frame) = ctx.stack.last() {
                     // b
-                    if frame != DataType::Int {
-                        eprintln!("Typeof b `!` Actual: {:?} TODO", frame);
+                    if *frame != DataType::Ptr {
+                        eprintln!("Expected Type `ptr` for `!`, found {:?}", frame);
+                        eprintln!("Type Stack: ");
+                        eprintln!("\tActual: {:?}", ctx.stack);
+                        eprintln!("\tExpected: {:?}", [DataType::Int, DataType::Ptr]);
                         exit(-1);
                     }
+                    ctx.stack.pop();
                 }
                 if let Some(frame) = ctx.stack.pop() {
                     // a
-                    if frame != DataType::Ptr {
-                        eprintln!("Typeof b `!` Actual: {:?} TODO", frame);
+                    if frame != DataType::Int {
+                        eprintln!("Expected Type `int` for `!`, found {:?}", frame);
+                        eprintln!("Type Stack: {:?}", ctx.stack);
                         exit(-1);
                     }
                 }
@@ -175,10 +179,20 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
                 }
                 ctx.ip = 0;
                 check_program_ops(ctx, &body.to_vec());
-                if ctx.stack != tmp {
-                    eprintln!("Unhandled data on stack after while");
+                if ctx.stack.len() != tmp.len() {
+                    eprintln!("Unhandled data on stack after `while`");
+                    eprintln!("Type Stack: ");
+                    eprintln!("\tActual: {:?}", ctx.stack);
+                    eprintln!("\tExpected: {:?}", tmp);
                     exit(-1);
                 }
+                for (expect, actual) in ctx.stack.iter().rev().zip(tmp.iter().rev()) {
+                    if actual != expect {
+                        eprintln!("Expected Type {:?} got {:?}", expect, actual);
+                        exit(-1);
+                    }
+                }
+                ctx.stack = tmp;
                 ctx.ip = next_ip;
                 continue;
             }
@@ -198,7 +212,7 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
             Operation::Fn(name, _, ins, outs, body) => {
                 let redef = ctx.fndefs.insert(name.clone(), ctx.ip);
                 if redef.is_some() {
-                    eprintln!("REdefinition of fn {}", name);
+                    eprintln!("Redefinition of fn {}", name);
                     exit(-1);
                 }
                 let mut fn_ctx = TypeContext::default();
@@ -206,6 +220,9 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
                 check_program_ops(&mut fn_ctx, &body.to_vec());
                 if fn_ctx.stack.len() != outs.len() {
                     eprintln!("Unhandled data on stack in fn {}", name);
+                    eprintln!("Type Stack: ");
+                    eprintln!("\tActual: {:?}", fn_ctx.stack);
+                    eprintln!("\tExpected: {:?}", ctx.stack);
                     exit(-1);
                 }
                 for (expect, actual) in outs.iter().rev().zip(fn_ctx.stack.iter().rev()) {
@@ -242,15 +259,15 @@ fn check_intrinsic(s: &String, ctx: &mut TypeContext) {
             ctx.stack.push(a);
         }
         "swap" => {
-            // (a b -> a b a)
+            // (a b -> b a)
             if ctx.stack.len() < 2 {
                 eprintln!("Unsifsient data on stack for `swap`");
                 exit(-1);
             }
             let b = ctx.stack.pop().unwrap();
             let a = ctx.stack.pop().unwrap();
-            ctx.stack.push(a);
             ctx.stack.push(b);
+            ctx.stack.push(a);
         }
         "over" => {
             // (a b -> a b a)

@@ -107,13 +107,13 @@ pub fn vm_run(program: Bytecode) {
                 stack.push(a);
             }
             Instr::Write(bytes) => {
-                let b = stack.pop(); // value
-                let a = stack.pop() as usize; // ptr
+                let b = stack.pop() as usize; // ptr
+                let a = stack.pop(); // value
                 match bytes {
-                    64 => mem.write(a, b as u64),
-                    32 => mem.write(a, b as u32),
-                    16 => mem.write(a, b as u16),
-                    08 => mem.write(a, b as u8),
+                    64 => mem.write(b, a as u64),
+                    32 => mem.write(b, a as u32),
+                    16 => mem.write(b, a as u16),
+                    08 => mem.write(b, a as u8),
                     _ => todo!(),
                 }
                 // unsafe {
