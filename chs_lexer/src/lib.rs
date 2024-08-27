@@ -109,7 +109,7 @@ impl Lexer {
         let value = String::from_utf8_lossy(&self.data[start..self.pos]).to_string();
         match value.as_str() {
             c if KEYWORDS.contains(&c) => Token::new(value, TokenKind::KeyWord, start_loc),
-            "dup" | "drop" | "swap" | "over" | "rot" | "mod" => {
+            "dup" | "drop" | "swap" | "over" | "rot" | "mod" | "offset" => {
                 Token::new(value, TokenKind::Intrinsic, start_loc)
             }
             _ => Token::new(value, TokenKind::Word, start_loc),

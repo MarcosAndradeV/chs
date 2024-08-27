@@ -153,10 +153,26 @@ fn parse_alloc_expr(p: &mut Parser) -> Operation {
                 value.push(val);
             }
             Ok(token) if token == *"+" => {
-                todo!();
+                if value.len() < 2 {
+                    eprintln!(
+                        "Error:\n  TODO but got {:?} in {}{}",
+                        token.kind, p.filepath, token.loc
+                    );
+                    exit(-1);
+                }
+                let sum = value.pop().unwrap() + value.pop().unwrap();
+                value.push(sum);
             }
             Ok(token) if token == *"*" => {
-                todo!();
+                if value.len() < 2 {
+                    eprintln!(
+                        "Error:\n  TODO but got {:?} in {}{}",
+                        token.kind, p.filepath, token.loc
+                    );
+                    exit(-1);
+                }
+                let sum = value.pop().unwrap() * value.pop().unwrap();
+                value.push(sum);
             }
             Ok(token) => {
                 eprintln!(

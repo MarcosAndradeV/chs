@@ -10,6 +10,7 @@ pub enum Instr {
     PlusI,
     MultI,
     Mod,
+    Offset,
     Lt,
     EqI,
     NEqI,

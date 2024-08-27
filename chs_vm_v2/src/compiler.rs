@@ -89,6 +89,7 @@ fn compile_op(ctx: &mut CompCtx, op: Operation) {
         Operation::Intrinsic(a) if a.as_str() == "over" => ctx.instr.push(Instr::Over),
         Operation::Intrinsic(a) if a.as_str() == "rot" => ctx.instr.push(Instr::Rot),
         Operation::Intrinsic(a) if a.as_str() == "swap" => ctx.instr.push(Instr::Swap),
+        Operation::Intrinsic(a) if a.as_str() == "offset" => ctx.instr.push(Instr::Offset),
         Operation::Write(a) => ctx.instr.push(Instr::Write(a)),
         Operation::Read(a) => ctx.instr.push(Instr::Read(a)),
         Operation::Fn(name, _args, _, _, body) => {

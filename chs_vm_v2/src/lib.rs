@@ -179,6 +179,11 @@ pub fn vm_run(program: Bytecode) {
                 let a = stack.pop();
                 stack.push(a * b);
             }
+            Instr::Offset => {
+                let b = stack.pop(); // offset
+                let a = stack.pop(); // ptr
+                stack.push(a + b);
+            }
             Instr::Mod => {
                 let b = stack.pop();
                 let a = stack.pop();

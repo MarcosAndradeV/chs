@@ -1,4 +1,4 @@
-use std::{collections::HashMap, process::exit};
+use std::{collections::HashMap, process::exit, rc::Rc};
 
 use chs_parser::{DataType, Operation};
 
@@ -8,7 +8,7 @@ type TypeStack = Vec<DataType>;
 struct TypeContext {
     stack: TypeStack,
     ip: usize,
-    fndefs: HashMap<String, usize>,
+    fndefs: HashMap<String, (Rc<[DataType]>, Rc<[DataType]>)>,
     memdefs: HashMap<String, usize>,
 }
 
@@ -35,26 +35,20 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
                 continue;
             }
             Operation::Word(name) => {
-                if let Some(fnn) = ctx.fndefs.get(name) {
-                    if let Some(Operation::Fn(_, _, ins, outs, _)) = program.get(*fnn) {
-                        if ins.len() > ctx.stack.len() {
-                            eprintln!("Unsifsient data on stack for fn {}", name);
+                if let Some((ins, outs)) = ctx.fndefs.get(name) {
+                    if ins.len() > ctx.stack.len() {
+                        eprintln!("Unsifsient data on stack for fn {}", name);
+                        exit(-1);
+                    }
+                    for (expect, actual) in ins.iter().rev().zip(ctx.stack.iter().rev()) {
+                        if actual != expect {
+                            eprintln!("Expected Type {:?} got {:?} in {}", expect, actual, name);
                             exit(-1);
                         }
-                        for (expect, actual) in ins.iter().rev().zip(ctx.stack.iter().rev()) {
-                            if actual != expect {
-                                eprintln!(
-                                    "Expected Type {:?} got {:?} in {}",
-                                    expect, actual, name
-                                );
-                                exit(-1);
-                            }
-                        }
-
-                        ctx.stack
-                            .truncate(ctx.stack.len().saturating_sub(ins.len()));
-                        ctx.stack.extend(outs.iter());
                     }
+                    ctx.stack
+                        .truncate(ctx.stack.len().saturating_sub(ins.len()));
+                    ctx.stack.extend(outs.iter());
                 } else if ctx.memdefs.contains_key(name) {
                     ctx.stack.push(DataType::Ptr);
                 } else {
@@ -210,7 +204,7 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
             Operation::Assing(_, _) => todo!(),
             Operation::Let(_, _, _) => todo!(),
             Operation::Fn(name, _, ins, outs, body) => {
-                let redef = ctx.fndefs.insert(name.clone(), ctx.ip);
+                let redef = ctx.fndefs.insert(name.clone(), (ins.clone(), outs.clone()));
                 if redef.is_some() {
                     eprintln!("Redefinition of fn {}", name);
                     exit(-1);
@@ -295,6 +289,28 @@ fn check_intrinsic(s: &String, ctx: &mut TypeContext) {
             ctx.stack.push(c);
             ctx.stack.push(a);
         }
+        "offset" => {
+            // (ptr int -> ptr)
+            if ctx.stack.len() < 2 {
+                eprintln!("Args `offset` TODO");
+                exit(-1);
+            }
+            if let Some(frame) = ctx.stack.pop() {
+                // b
+                if frame != DataType::Int {
+                    eprintln!("Typeof b `offset` Actual: {:?} TODO", frame);
+                    exit(-1);
+                }
+            }
+            if let Some(frame) = ctx.stack.pop() {
+                // a
+                if frame != DataType::Ptr {
+                    eprintln!("Typeof a `offset` Actual: {:?} TODO", frame);
+                    exit(-1);
+                }
+            }
+            ctx.stack.push(DataType::Ptr)
+        }
         "*" => {
             // (int int -> int)
             if ctx.stack.len() < 2 {
@@ -326,14 +342,14 @@ fn check_intrinsic(s: &String, ctx: &mut TypeContext) {
             if let Some(frame) = ctx.stack.pop() {
                 // b
                 if frame != DataType::Int {
-                    eprintln!("Typeof b + Actual: {:?} TODO", frame);
+                    eprintln!("Typeof a `+` Actual: {:?} TODO", frame);
                     exit(-1);
                 }
             }
             if let Some(frame) = ctx.stack.pop() {
                 // a
                 if frame != DataType::Int {
-                    eprintln!("Typeof a + TODO");
+                    eprintln!("Typeof a `+` Actual: {:?} TODO", frame);
                     exit(-1);
                 }
             }
