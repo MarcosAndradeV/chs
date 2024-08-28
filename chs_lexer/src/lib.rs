@@ -58,6 +58,7 @@ impl Lexer {
             c if c.is_ascii_whitespace() => self.whitespace(start),
             b'a'..=b'z' | b'A'..=b'Z' => self.identfier(start),
             b'0'..=b'9' => self.number(start),
+            b'\"' => self.string(start),
             b'{' => self.make_token_advance(start, TokenKind::OpenCurly),
             b'}' => self.make_token_advance(start, TokenKind::CloseCurly),
             b':' => self.make_token_advance(start, TokenKind::KeyWord),
@@ -97,6 +98,29 @@ impl Lexer {
             }
         }
     }
+
+    fn string(&mut self, start: usize) -> Token {
+        let start_loc = self.loc;
+        let mut buf = String::new();
+        loop {
+            self.advance_pos();
+            match self.curr_char() {
+                b'\"' => break self.advance_pos(),
+                b'\0' => return self.make_token(start, TokenKind::Invalid, start_loc),
+                b'\\' => {
+                    match self.peek_char(1) {
+                        b'n' => buf.push('\n'),
+                        b'\\' => buf.push('\\'),
+                        _ => return self.make_token_advance(start, TokenKind::Invalid),
+                    }
+                    self.advance_pos();
+                }
+                a => buf.push(a as char),
+            }
+        }
+        Token::new(buf, TokenKind::String, start_loc)
+    }
+
     fn identfier(&mut self, start: usize) -> Token {
         let start_loc = self.loc;
         loop {
@@ -177,6 +201,7 @@ pub enum TokenKind {
     Whitespace,
     Comment,
     Interger,
+    String,
     KeyWord,
     Word,
     Intrinsic,

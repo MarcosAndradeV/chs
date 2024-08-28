@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Instr {
     Halt,
@@ -32,6 +34,7 @@ pub struct Bytecode {
     pub program: Vec<Instr>,
     pub program_mem: usize,
     pub entry: usize,
+    pub strs: Vec<Rc<[u8]>>,
 }
 
 impl Bytecode {
@@ -40,6 +43,7 @@ impl Bytecode {
             program,
             program_mem,
             entry: 0,
+            strs: Vec::default(),
         }
     }
     pub fn len(&self) -> usize {

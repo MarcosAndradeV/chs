@@ -422,6 +422,7 @@ fn parse_expr(p: &mut Parser, token: Token) -> Operation {
         TokenKind::KeyWord if token == *"&" => parse_bind_expr(p),
         TokenKind::Intrinsic if token == *"@" => parse_read_expr(p),
         TokenKind::Intrinsic if token == *"!" => parse_write_expr(p),
+        TokenKind::String => Operation::Str(token.value),
         TokenKind::Interger => {
             let val = token
                 .value
@@ -503,6 +504,7 @@ pub enum DataType {
 #[derive(Debug, Clone)]
 pub enum Operation {
     Debug,
+    Str(String),                           // String
     Alloc(String, usize),                  // Name Size
     Read(usize),                           // Bytes
     Write(usize),                          // Bytes

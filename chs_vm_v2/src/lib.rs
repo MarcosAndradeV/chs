@@ -60,10 +60,19 @@ impl VMStack<Value> {
 }
 
 pub fn vm_run(program: Bytecode) {
-    // let mut stack: Vec<Value> = Vec::with_capacity(1024);
+    let mut strs_size = 0;
+    for e in program.strs.iter() {
+        strs_size += e.len();
+    }
     let mut stack = VMStack::<Value>::new(1024);
     let mut rstack: Vec<usize> = Vec::with_capacity(1024);
-    let mut mem = Memory::new(program.program_mem);
+    let mut mem = Memory::new(strs_size + program.program_mem);
+    mem.set_write_pos(0);
+    for e in program.strs.iter() {
+        for v in e.iter() {
+            mem.write_push::<u8>(*v)
+        }
+    }
     let mut ip = program.entry;
     // for p in &program.program { println!("{:?}", p) }
     loop {

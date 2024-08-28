@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
 
 use chs_parser::Operation;
 
@@ -7,6 +7,7 @@ use crate::instructions::{Bytecode, Instr};
 #[derive(Debug, Default)]
 struct CompCtx {
     instr: Vec<Instr>,
+    strs: Vec<Rc<[u8]>>,
     fn_def: HashMap<String, usize>,
     mem_def: HashMap<String, usize>,
     mem_size: usize,
@@ -22,12 +23,18 @@ pub fn compile(ops: Vec<Operation>) -> Bytecode {
         program: ctx.instr,
         program_mem: ctx.mem_size,
         entry: 0,
+        strs: ctx.strs,
     }
 }
 
 fn compile_op(ctx: &mut CompCtx, op: Operation) {
     match op {
         Operation::PushI(i) => ctx.instr.push(Instr::PushI32(i)),
+        Operation::Str(s) => {
+            ctx.instr.push(Instr::PushI32(s.len() as i32));
+            ctx.instr.push(Instr::PushPtr(ctx.strs.len()));
+            ctx.strs.push(s.into_bytes().into());
+        }
         Operation::Debug => ctx.instr.push(Instr::Debug),
         Operation::Alloc(name, size) => {
             ctx.mem_def.insert(name, ctx.mem_size);

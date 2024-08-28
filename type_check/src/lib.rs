@@ -29,6 +29,12 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
                 ctx.ip += 1;
                 continue;
             }
+            Operation::Str(_) => {
+                ctx.stack.push(DataType::Int);
+                ctx.stack.push(DataType::Ptr);
+                ctx.ip += 1;
+                continue;
+            }
             Operation::Alloc(name, _) => {
                 ctx.memdefs.insert(name.clone(), 0);
                 ctx.ip += 1;
