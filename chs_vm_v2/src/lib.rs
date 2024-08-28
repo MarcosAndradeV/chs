@@ -1,7 +1,10 @@
 pub mod compiler;
 pub mod instructions;
 use core::fmt;
-use std::{fs::File, io::Write, marker::PhantomData, os::fd::FromRawFd, ptr::slice_from_raw_parts};
+use std::{
+    fs::File, io::Write, marker::PhantomData, os::fd::FromRawFd, process::exit,
+    ptr::slice_from_raw_parts,
+};
 
 use instructions::{Bytecode, Instr};
 use memory::Memory;
@@ -92,6 +95,13 @@ pub fn vm_run(program: Bytecode) {
                     mem.set_write_pos(b);
                     let buf = unsafe { &*slice_from_raw_parts(mem.to_ptr::<u8>(), a) };
                     let mut f = unsafe { File::from_raw_fd(c) };
+                    match f.metadata() {
+                        Ok(_) => {}
+                        Err(err) => {
+                            eprintln!("{} : Exiting", err);
+                            exit(-1);
+                        }
+                    }
                     let _ = f.write(buf);
                 }
                 _ => todo!(),
