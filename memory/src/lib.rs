@@ -123,6 +123,12 @@ impl Memory {
         buf
     }
 
+    pub fn to_ptr<T: Copy + MemoryAllowed>(&self) -> *mut T {
+        unsafe {
+            return self.inner.add(self.write_pos) as *mut T;
+        }
+    }
+
     pub fn set_write_pos(&mut self, pos: usize) {
         self.write_pos = pos;
     }

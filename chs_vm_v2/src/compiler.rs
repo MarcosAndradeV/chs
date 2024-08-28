@@ -30,6 +30,7 @@ pub fn compile(ops: Vec<Operation>) -> Bytecode {
 fn compile_op(ctx: &mut CompCtx, op: Operation) {
     match op {
         Operation::PushI(i) => ctx.instr.push(Instr::PushI32(i)),
+        Operation::Sys(i) => ctx.instr.push(Instr::Sys(i)),
         Operation::Str(s) => {
             ctx.instr.push(Instr::PushI32(s.len() as i32));
             ctx.instr.push(Instr::PushPtr(ctx.strs.len()));

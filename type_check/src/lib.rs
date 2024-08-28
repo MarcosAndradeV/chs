@@ -69,6 +69,11 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
                 ctx.ip += 1;
                 continue;
             }
+            Operation::Sys(s) => {
+                check_sys_fn(s, ctx);
+                ctx.ip += 1;
+                continue;
+            }
             Operation::PushI(_) => {
                 ctx.stack.push(DataType::Int);
                 ctx.ip += 1;
@@ -234,6 +239,43 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
                 ctx.ip += 1;
                 continue;
             }
+        }
+    }
+}
+
+fn check_sys_fn(s: &String, ctx: &mut TypeContext) {
+    match s.as_str() {
+        "write" => {
+            //(int ptr int -> )
+            if ctx.stack.len() < 3 {
+                eprintln!("Write TODO");
+                exit(-1);
+            }
+            if let Some(frame) = ctx.stack.pop() {
+                // c
+                if frame != DataType::Int {
+                    eprintln!("Expected type Int `write` Actual: {:?} TODO", frame);
+                    exit(-1);
+                }
+            }
+            if let Some(frame) = ctx.stack.pop() {
+                // b
+                if frame != DataType::Ptr {
+                    eprintln!("Expected type Ptr `write` Actual: {:?} TODO", frame);
+                    exit(-1);
+                }
+            }
+            if let Some(frame) = ctx.stack.pop() {
+                // a
+                if frame != DataType::Int {
+                    eprintln!("Expected type Int `write` Actual: {:?} TODO", frame);
+                    exit(-1);
+                }
+            }
+        }
+        a => {
+            eprintln!("Unkwon sys fn `{}` in type check", a);
+            exit(-1);
         }
     }
 }

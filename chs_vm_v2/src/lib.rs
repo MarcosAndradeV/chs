@@ -1,7 +1,7 @@
 pub mod compiler;
 pub mod instructions;
 use core::fmt;
-use std::marker::PhantomData;
+use std::{fs::File, io::Write, marker::PhantomData, os::fd::FromRawFd, ptr::slice_from_raw_parts};
 
 use instructions::{Bytecode, Instr};
 use memory::Memory;
@@ -84,6 +84,18 @@ pub fn vm_run(program: Bytecode) {
             Instr::Halt => {
                 next_addr = program.program.len();
             }
+            Instr::Sys(ref s) => match s.as_str() {
+                "write" => {
+                    let c = stack.pop() as i32; // fd
+                    let b = stack.pop() as usize; // ptr
+                    let a = stack.pop() as usize; // int
+                    mem.set_write_pos(b);
+                    let buf = unsafe { &*slice_from_raw_parts(mem.to_ptr::<u8>(), a) };
+                    let mut f = unsafe { File::from_raw_fd(c) };
+                    let _ = f.write(buf);
+                }
+                _ => todo!(),
+            },
             Instr::PushI32(v) => stack.push(v as u64),
             Instr::PushPtr(v) => stack.push(v as u64),
             Instr::Drop => {

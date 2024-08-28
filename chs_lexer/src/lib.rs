@@ -8,7 +8,7 @@ pub struct Lexer {
 }
 
 const KEYWORDS: &[&'static str] = &[
-    "debug", "if", "else", "while", "fn", "let", "alloc", ":", "=", "->", "&",
+    "debug", "if", "else", "while", "fn", "let", "alloc", ":", "=", "->", "&", "$",
 ];
 const INTRISIC: &[u8] = &[b'+', b'-', b'*', b'=', b':', b'>', b'<', b'!', b'@'];
 
@@ -63,6 +63,7 @@ impl Lexer {
             b'}' => self.make_token_advance(start, TokenKind::CloseCurly),
             b':' => self.make_token_advance(start, TokenKind::KeyWord),
             b'&' => self.make_token_advance(start, TokenKind::KeyWord),
+            b'$' => self.make_token_advance(start, TokenKind::KeyWord),
             b'-' => {
                 if self.peek_char(1) == b'-' {
                     self.pos += 2;

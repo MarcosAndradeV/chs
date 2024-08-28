@@ -17,6 +17,7 @@ pub enum Instr {
     EqI,
     NEqI,
     Ret,
+    Sys(String),    // SysFn
     Write(usize),   // Bytes
     Read(usize),    // Bytes
     Call(usize),    // addr

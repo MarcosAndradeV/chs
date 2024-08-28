@@ -332,6 +332,25 @@ fn parse_bind_expr(p: &mut Parser) -> Operation {
     }
 }
 
+fn parse_sys_expr(p: &mut Parser) -> Operation {
+    match p.expect(TokenKind::Word) {
+        Ok(token) => match token.value.as_str() {
+            "write" => Operation::Sys(token.value),
+            _ => {
+                eprintln!(
+                    "Error:\n  Unexpect Word `{}` after `$` in {}{}",
+                    token.value, p.filepath, token.loc
+                );
+                exit(-1)
+            }
+        },
+        Err(e) => {
+            eprintln!("Error:\n  Expect `{{` after `else` in {}{}", p.filepath, e);
+            exit(-1)
+        }
+    }
+}
+
 fn parse_read_expr(p: &mut Parser) -> Operation {
     match p.expect(TokenKind::Interger) {
         Ok(token) => {
@@ -420,6 +439,7 @@ fn parse_expr(p: &mut Parser, token: Token) -> Operation {
         TokenKind::KeyWord if token == *":" => parse_assing_expr(p),
         TokenKind::KeyWord if token == *"let" => parse_let_expr(p),
         TokenKind::KeyWord if token == *"&" => parse_bind_expr(p),
+        TokenKind::KeyWord if token == *"$" => parse_sys_expr(p),
         TokenKind::Intrinsic if token == *"@" => parse_read_expr(p),
         TokenKind::Intrinsic if token == *"!" => parse_write_expr(p),
         TokenKind::String => Operation::Str(token.value),
@@ -504,6 +524,7 @@ pub enum DataType {
 #[derive(Debug, Clone)]
 pub enum Operation {
     Debug,
+    Sys(String),                           // SysFnName
     Str(String),                           // String
     Alloc(String, usize),                  // Name Size
     Read(usize),                           // Bytes
