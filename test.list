@@ -1,5 +1,6 @@
 ./target/debug/chsi tests/fns.chs
 ./target/debug/chsi tests/gcd.chs
 ./target/debug/chsi tests/hello.chs
+./target/debug/chsi tests/primitive_struct.chs
 ./target/debug/chsi tests/arrays.chs
 ./target/debug/chsi tests/while_test.chs
