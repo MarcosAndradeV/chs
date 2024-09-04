@@ -1,4 +1,4 @@
-use std::{process::exit, rc::Rc};
+use std::{collections::HashMap, process::exit, rc::Rc};
 
 use chs_lexer::{Lexer, Loc, Token, TokenKind};
 
@@ -6,6 +6,7 @@ struct Parser {
     pub lexer: Lexer,
     pub filepath: String,
     pub peeked: Option<Token>,
+    consts: HashMap<String, usize>,
 }
 
 pub fn parse_file(input: Vec<u8>, filepath: String) -> Vec<Operation> {
@@ -15,6 +16,7 @@ pub fn parse_file(input: Vec<u8>, filepath: String) -> Vec<Operation> {
         lexer,
         filepath,
         peeked: None,
+        consts: HashMap::default(),
     };
 
     loop {
@@ -25,6 +27,10 @@ pub fn parse_file(input: Vec<u8>, filepath: String) -> Vec<Operation> {
         ops.push(match token.kind {
             TokenKind::KeyWord if token == *"fn" => parse_fn_expr(&mut p),
             TokenKind::KeyWord if token == *"alloc" => parse_alloc_expr(&mut p),
+            TokenKind::KeyWord if token == *"const" => {
+                parse_const_expr(&mut p);
+                continue;
+            }
 
             // TokenKind::OpenCurly => continue,
             _ => parse_expr(&mut p, token),
@@ -139,11 +145,108 @@ fn parse_fn_expr(p: &mut Parser) -> Operation {
     Operation::Fn(name, args.into(), ins.into(), outs.into(), body.into())
 }
 
+fn parse_const_expr(p: &mut Parser) {
+    let mut value = vec![];
+    loop {
+        match p.require() {
+            Ok(token) if token == *":" => break,
+            Ok(token) if token.kind == TokenKind::Word => {
+                let val = p.consts.get(&token.value);
+                if val.is_none() {
+                    eprintln!(
+                        "Error:\n  Unkwon CONST but got {:?} in {}{}",
+                        token.kind, p.filepath, token.loc
+                    );
+                    exit(-1);
+                }
+                value.push(*val.unwrap());
+            }
+            Ok(token) if token.kind == TokenKind::Interger => {
+                let val = token
+                    .value
+                    .parse()
+                    .map_err(|e| eprintln!("ParseIntError: {} in {:?}", e, token))
+                    .expect("ParseInt");
+                value.push(val);
+            }
+            Ok(token) if token == *"+" => {
+                if value.len() < 2 {
+                    eprintln!(
+                        "Error:\n  TODO but got {:?} in {}{}",
+                        token.kind, p.filepath, token.loc
+                    );
+                    exit(-1);
+                }
+                let sum = value.pop().unwrap() + value.pop().unwrap();
+                value.push(sum);
+            }
+            Ok(token) if token == *"*" => {
+                if value.len() < 2 {
+                    eprintln!(
+                        "Error:\n  TODO but got {:?} in {}{}",
+                        token.kind, p.filepath, token.loc
+                    );
+                    exit(-1);
+                }
+                let sum = value.pop().unwrap() * value.pop().unwrap();
+                value.push(sum);
+            }
+            Ok(token) => {
+                eprintln!(
+                    "Error:\n  Expect Interger, `+` of `*` but got {:?} in {}{}",
+                    token.kind, p.filepath, token.loc
+                );
+                exit(-1);
+            }
+            Err(e) => {
+                eprintln!("Error:\n  Expect `:` but got EOF in {}{}", p.filepath, e);
+                exit(-1);
+            }
+        }
+    }
+
+    match p.require() {
+        Ok(token) if token == *"=" => {}
+        Ok(token) => {
+            eprintln!(
+                "Error:\n  Expect `=` but got {:?} in {}{}",
+                token.kind, p.filepath, token.loc
+            );
+            exit(-1);
+        }
+        Err(e) => {
+            eprintln!("Error:\n  Expect `=` but got EOF in {}{}", p.filepath, e);
+            exit(-1);
+        }
+    }
+
+    match p.expect(TokenKind::Word) {
+        Ok(token) => {
+            p.consts.insert(token.value, value[0]);
+        }
+        Err(e) => {
+            eprintln!("Error:\n  Expect a Word in {}{}", p.filepath, e);
+            exit(-1);
+        }
+    }
+}
+
 fn parse_alloc_expr(p: &mut Parser) -> Operation {
     let mut value = vec![];
     loop {
         match p.require() {
             Ok(token) if token == *":" => break,
+            Ok(token) if token.kind == TokenKind::Word => {
+                let val = p.consts.get(&token.value);
+                if val.is_none() {
+                    eprintln!(
+                        "Error:\n  Unkwon CONST but got {:?} in {}{}",
+                        token.kind, p.filepath, token.loc
+                    );
+                    exit(-1);
+                }
+                value.push(*val.unwrap());
+            }
             Ok(token) if token.kind == TokenKind::Interger => {
                 let val = token
                     .value
