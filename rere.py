@@ -93,8 +93,11 @@ def load_snapshots(file_path: str) -> list[dict]:
     return snapshots
 
 def update_test_list(test_list_path):
-    if not os.path.isdir("tests") or not os.path.isfile(test_list_path):
-        return
+    if not os.path.isdir("tests"):
+        print("ERROR: test folder not found")
+        exit(-1)
+    if not os.path.isfile(test_list_path):
+        print(f"INFO: {test_list_path} not exist. Creating one.")
     with open(test_list_path, "w") as f:
         for name in os.listdir("tests"):
             f.write(f"./target/debug/chsi tests/{name}\n")
