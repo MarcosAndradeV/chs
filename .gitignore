@@ -1,4 +1,5 @@
 /target
-test.list*
+*.bi
+*.list
 __pycache__
 temp
