@@ -47,6 +47,10 @@ impl VMStack<Value> {
             marker: PhantomData::default(),
         }
     }
+    pub fn get(&mut self, index: usize) -> Value {
+        let index = index * size_of::<Value>();
+        self.data.read(index)
+    }
     pub fn push(&mut self, value: Value) {
         self.top -= size_of::<Value>();
         self.data.write(self.top, value);
@@ -68,7 +72,7 @@ pub fn vm_run(program: Bytecode) {
         strs_size += e.len();
     }
     let mut stack = VMStack::<Value>::new(1024);
-    let mut rstack: Vec<usize> = Vec::with_capacity(1024);
+    let mut rstack = VMStack::<Value>::new(1024);
     let mut mem = Memory::new(strs_size + program.program_mem);
     mem.set_write_pos(0);
     for e in program.strs.iter() {
@@ -106,6 +110,21 @@ pub fn vm_run(program: Bytecode) {
                 }
                 _ => todo!(),
             },
+            Instr::LetBind(v) => {
+                for _ in 0..v {
+                    let value = stack.pop();
+                    rstack.push(value);
+                }
+            }
+            Instr::PushBind(v) => {
+                let value = rstack.get(rstack.len() - 1 - v);
+                stack.push(value);
+            }
+            Instr::UnBind(v) => {
+                for _ in 0..v {
+                    rstack.pop();
+                }
+            }
             Instr::PushI32(v) => stack.push(v as u64),
             Instr::PushPtr(v) => stack.push(v as u64),
             Instr::Drop => {
@@ -241,13 +260,10 @@ pub fn vm_run(program: Bytecode) {
                 stack.push(stack.data.read((stack.top + rel) - size_of::<Value>()));
             }
             Instr::Ret => {
-                next_addr = match rstack.pop() {
-                    Some(o) => o,
-                    None => break,
-                };
+                next_addr = rstack.pop() as usize;
             }
             Instr::Call(addr) => {
-                rstack.push(next_addr);
+                rstack.push(next_addr as u64);
                 next_addr = addr;
             }
         }

@@ -17,7 +17,10 @@ pub enum Instr {
     EqI,
     NEqI,
     Ret,
-    Sys(String),    // SysFn
+    LetBind(usize),
+    PushBind(usize),
+    UnBind(usize),
+    Sys(String),    // SysFn // TODO: Make String -> Enum
     Write(usize),   // Bytes
     Read(usize),    // Bytes
     Call(usize),    // addr

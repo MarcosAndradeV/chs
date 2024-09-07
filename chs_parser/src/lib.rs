@@ -495,43 +495,38 @@ fn parse_write_expr(p: &mut Parser) -> Operation {
 }
 
 fn parse_let_expr(p: &mut Parser) -> Operation {
-    let mut value: Vec<Operation> = vec![];
+    let mut names: Vec<String> = vec![];
     loop {
         match p.require() {
-            Ok(token) if token == *":" => break,
-            Ok(token) => value.push(parse_expr(p, token)),
-            Err(e) => {
-                eprintln!("Error:\n  Expect `:` but got EOF in {}{}", p.filepath, e);
-                exit(-1);
-            }
-        }
-    }
-    let mut type_: Vec<String> = vec![];
-    loop {
-        match p.require() {
-            Ok(token) if token == *"=" => break,
-            Ok(token) if token.kind == TokenKind::Word => type_.push(token.value),
+            Ok(token) if token == *"{" => break,
+            Ok(token) if token.kind == TokenKind::Word => names.push(token.value),
             Ok(token) => {
                 eprintln!(
-                    "Error:\n  Expect Type but got `{}` in {}{}",
+                    "Error:\n  Expect Word but got `{}` in {}{}",
                     token.value, p.filepath, token.loc
                 );
                 exit(-1);
             }
             Err(e) => {
-                eprintln!("Error:\n  Expect `=` but got EOF in {}{}", p.filepath, e);
+                eprintln!("Error:\n  Expect `{{` but got EOF in {}{}", p.filepath, e);
                 exit(-1);
             }
         }
     }
 
-    match p.expect(TokenKind::Word) {
-        Ok(token) => Operation::Let(token.value, type_.into(), value.into()),
-        Err(e) => {
-            eprintln!("Error:\n  Expect a Word in {}{}", p.filepath, e);
-            exit(-1);
+    let mut body: Vec<Operation> = vec![];
+    loop {
+        match p.require() {
+            Ok(token) if token == *"}" => break,
+            Ok(token) => body.push(parse_expr(p, token)),
+            Err(e) => {
+                eprintln!("Error:\n  Expect `}}` but got EOF in {}{}", p.filepath, e);
+                exit(-1);
+            }
         }
     }
+
+    Operation::Let(names.into(), body.into())
 }
 
 fn parse_expr(p: &mut Parser, token: Token) -> Operation {
@@ -627,20 +622,20 @@ pub enum DataType {
 #[derive(Debug, Clone)]
 pub enum Operation {
     Debug,
-    Sys(String),                           // SysFnName
-    Str(String),                           // String
-    Alloc(String, usize),                  // Name Size
-    Read(usize),                           // Bytes
-    Write(usize),                          // Bytes
-    Word(String),                          // Word
-    Intrinsic(String),                     // Symbol
-    PushI(i32),                            // Literal
-    If(Rc<[Self]>),                        // Body
-    IfElse(Rc<[Self]>, Rc<[Self]>),        // Body1 Body2
-    While(Rc<[Self]>, Rc<[Self]>),         // cond Body
-    Bind(u32),                             // index
-    Assing(String, Rc<[String]>),          // name type
-    Let(String, Rc<[String]>, Rc<[Self]>), // name type value
+    Sys(String),                    // SysFnName
+    Str(String),                    // String
+    Alloc(String, usize),           // Name Size
+    Read(usize),                    // Bytes
+    Write(usize),                   // Bytes
+    Word(String),                   // Word
+    Intrinsic(String),              // Symbol
+    PushI(i32),                     // Literal
+    If(Rc<[Self]>),                 // Body
+    IfElse(Rc<[Self]>, Rc<[Self]>), // Body1 Body2
+    While(Rc<[Self]>, Rc<[Self]>),  // cond Body
+    Bind(u32),                      // index
+    Assing(String, Rc<[String]>),   // name type
+    Let(Rc<[String]>, Rc<[Self]>),  // names Body
     Fn(
         String,
         Rc<[String]>,

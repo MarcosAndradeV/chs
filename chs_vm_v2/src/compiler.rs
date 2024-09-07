@@ -11,6 +11,7 @@ struct CompCtx {
     fn_def: HashMap<String, usize>,
     mem_def: HashMap<String, usize>,
     mem_size: usize,
+    binds: HashMap<String, usize>,
 }
 
 pub fn compile(ops: Vec<Operation>) -> Bytecode {
@@ -40,6 +41,19 @@ fn compile_op(ctx: &mut CompCtx, op: Operation) {
         Operation::Alloc(name, size) => {
             ctx.mem_def.insert(name, ctx.mem_size);
             ctx.mem_size += size;
+        }
+        Operation::Let(names, body) => {
+            ctx.instr.push(Instr::LetBind(names.len()));
+            for (i, name) in names.iter().rev().enumerate() {
+                ctx.binds.insert(name.clone(), i);
+            }
+            for op in body.to_vec() {
+                compile_op(ctx, op)
+            }
+            for name in names.iter().rev() {
+                ctx.binds.remove(name);
+            }
+            ctx.instr.push(Instr::UnBind(names.len()));
         }
         Operation::If(body) => {
             let offset = ctx.instr.len();
@@ -118,6 +132,8 @@ fn compile_op(ctx: &mut CompCtx, op: Operation) {
                 ctx.instr.push(Instr::Call(*fnn));
             } else if let Some(mem) = ctx.mem_def.get(&name) {
                 ctx.instr.push(Instr::PushPtr(*mem));
+            } else if let Some(bind) = ctx.binds.get(&name) {
+                ctx.instr.push(Instr::PushBind(*bind))
             }
         }
         e => {

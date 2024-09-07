@@ -10,6 +10,7 @@ struct TypeContext {
     ip: usize,
     fndefs: HashMap<String, (Rc<[DataType]>, Rc<[DataType]>)>,
     memdefs: HashMap<String, usize>,
+    binds: HashMap<String, DataType>,
 }
 
 pub fn check_program(program: &Vec<Operation>) {
@@ -57,6 +58,8 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
                     ctx.stack.extend(outs.iter());
                 } else if ctx.memdefs.contains_key(name) {
                     ctx.stack.push(DataType::Ptr);
+                } else if ctx.binds.contains_key(name) {
+                    ctx.stack.push(ctx.binds.get(name).unwrap().clone());
                 } else {
                     eprintln!("Unkwon word {}", name);
                     exit(-1);
@@ -213,7 +216,29 @@ fn check_program_ops(ctx: &mut TypeContext, program: &Vec<Operation>) {
                 continue;
             }
             Operation::Assing(_, _) => todo!(),
-            Operation::Let(_, _, _) => todo!(),
+            Operation::Let(names, body) => {
+                let next_ip = ctx.ip + 1;
+                if ctx.stack.len() < names.len() {
+                    eprintln!("Unsuficient data on stack for `let`");
+                    eprintln!("Type Stack: ");
+                    eprintln!("\tActual: {:?}", ctx.stack.len());
+                    eprintln!("\tExpected: {:?}", names.len());
+                    exit(-1);
+                }
+                for name in names.iter().rev() {
+                    if let Some(_) = ctx.binds.insert(name.clone(), ctx.stack.pop().unwrap()){
+                        eprintln!("Redefinition of word {}", name);
+                        exit(-1);
+                    }
+                }
+                ctx.ip = 0;
+                check_program_ops(ctx, &body.to_vec());
+                for name in names.iter().rev() {
+                    ctx.binds.remove(name);
+                }
+                ctx.ip = next_ip;
+                continue;
+            }
             Operation::Fn(name, _, ins, outs, body) => {
                 let redef = ctx.fndefs.insert(name.clone(), (ins.clone(), outs.clone()));
                 if redef.is_some() {
@@ -285,7 +310,10 @@ fn check_intrinsic(s: &String, ctx: &mut TypeContext) {
         "drop" => {
             // (a ->)
             if ctx.stack.len() < 1 {
-                eprintln!("Drop TODO");
+                eprintln!("Unsuficient data on stack for `drop`");
+                eprintln!("Type Stack: ");
+                eprintln!("\tActual: {:?}", ctx.stack.len());
+                eprintln!("\tExpected: {:?}", 1);
                 exit(-1);
             }
             let _ = ctx.stack.pop();
