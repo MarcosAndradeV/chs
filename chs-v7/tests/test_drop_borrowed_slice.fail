@@ -1,0 +1,7 @@
+module main
+
+fn main() {
+    var backing = [3]int.{1, 2, 3};
+    var borrowed: []int = backing;
+    drop(borrowed);
+}

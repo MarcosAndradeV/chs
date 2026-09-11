@@ -1,0 +1,12 @@
+module main
+
+type NonEq struct {
+    x: int,
+}
+
+fn main() {
+    var val = NonEq.{ x: 1 };
+    switch val {
+        NonEq.{ x: 1 } -> {}
+    };
+}

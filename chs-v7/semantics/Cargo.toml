@@ -1,0 +1,10 @@
+[package]
+name = "semantics"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+lex-just-parse = { workspace = true }
+diagnostic = { path = "../diagnostic" }
+syntax = { path = "../syntax" }
+types = { path = "../types" }

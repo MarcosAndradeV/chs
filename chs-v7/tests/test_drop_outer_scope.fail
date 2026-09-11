@@ -1,0 +1,11 @@
+module main
+
+import "c/libc"
+
+fn main() {
+    var x = new(int);
+    {
+        drop(x);
+    };
+    *x = 89;
+}

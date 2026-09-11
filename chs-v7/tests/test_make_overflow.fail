@@ -1,0 +1,6 @@
+module main
+
+fn main() {
+    // 536870912 * sizeof(int) exceeds the runtime's signed 32-bit byte count.
+    var values = make([]int, 536870912);
+}

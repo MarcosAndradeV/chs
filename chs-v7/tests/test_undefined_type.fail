@@ -1,0 +1,8 @@
+module main
+
+type Test struct {
+    foo: Foo
+}
+
+fn main() {
+}

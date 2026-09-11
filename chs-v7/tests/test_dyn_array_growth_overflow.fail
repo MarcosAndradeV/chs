@@ -1,0 +1,8 @@
+module main
+
+fn main() {
+    var values: [dyn]int = .{};
+    values.len = 4611686018427387903;
+    values.cap = 4611686018427387903;
+    push(&values, 1);
+}

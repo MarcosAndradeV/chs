@@ -1,0 +1,12 @@
+target/
+*.a
+*.o
+*.so
+out
+
+# Obsidian Personal Workspace
+docs/.obsidian/workspace.json
+docs/.obsidian/workspace-mobile.json
+docs/.obsidian/appearance.json
+docs/.obsidian/cache/
+docs/.trash/

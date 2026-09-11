@@ -1,0 +1,37 @@
+diff --git a/cli/src/main.rs b/cli/src/main.rs
+index a58599b..14f3fa2 100644
+--- a/cli/src/main.rs
++++ b/cli/src/main.rs
+@@ -58,11 +58,14 @@ fn main() -> ChsResult<()> {
+                 exit(1);
+             }
+         }
++        Commands::Cgen { output, kind, link_name, paths } => {
++            todo!("{output:?}, {kind:?}, {link_name:?}, {paths:?}")
++        }
+         Commands::Clear => {
+             _ = fs::remove_dir_all(".build");
+         }
+         Commands::Version => {
+-            println!("version: {BIN_NAME}-{PKG_VERSION}",);
++            println!("version: {BIN_NAME}-{PKG_VERSION}");
+         }
+     }
+     Ok(())
+@@ -98,6 +101,16 @@ enum Commands {
+         #[arg(short = 'S', long)]
+         search_path: Vec<PathBuf>,
+     },
++    /// Generate bindings for chs
++    Cgen {
++        #[arg(short, long, default_value = "generated.chs")]
++        output: PathBuf,
++        #[arg(long, short = 'k', default_value = "dynlib")]
++        kind: String,
++        #[arg(long, short = 'l')]
++        link_name: String,
++        paths: Vec<PathBuf>,
++    },
+     /// Clear the project artifacts
+     Clear,
+     /// Print version

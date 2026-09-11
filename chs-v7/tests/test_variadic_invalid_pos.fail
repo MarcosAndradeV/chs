@@ -1,0 +1,8 @@
+module main
+
+fn invalid(a: ...int, b: int) {
+}
+
+fn main() {
+    invalid(1, 2);
+}

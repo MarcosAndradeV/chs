@@ -1,0 +1,7 @@
+module main
+
+import . "assert"
+
+fn main() {
+    assert(1 == 2);
+}

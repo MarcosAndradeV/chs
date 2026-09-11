@@ -1,0 +1,6 @@
+module main
+
+fn main() {
+    var fixed: [3]int = .{1, 2, 3};
+    var arr: [dyn]int = fixed; // Should fail to compile
+}

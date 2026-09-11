@@ -1,0 +1,7 @@
+module main
+
+fn main() {
+    var ptr = new(int);
+    drop(ptr);
+    drop(ptr);
+}

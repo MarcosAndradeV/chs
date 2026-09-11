@@ -1,0 +1,10 @@
+module main
+
+fn calc(a: int, b: int, c: int) -> int {
+    return (a - b) * c;
+}
+
+fn main() {
+    // Fails because parameter 'b' is supplied twice as a named argument
+    var res = calc(a: 10, b: 4, b: 5);
+}

@@ -1,0 +1,13 @@
+module main
+
+type fptr fn(x: int) -> int
+
+fn foo(x: int) -> int {
+    return x;
+}
+
+fn main() {
+    var f: fptr = foo;
+    // Fails because function pointer expects 1 argument, but 2 are provided
+    var res = f(10, 20);
+}

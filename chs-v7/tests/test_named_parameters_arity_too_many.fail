@@ -1,0 +1,10 @@
+module main
+
+fn calc(a: int, b: int, c: int) -> int {
+    return (a - b) * c;
+}
+
+fn main() {
+    // Fails because too many arguments are provided
+    var res = calc(10, 4, 3, 2);
+}

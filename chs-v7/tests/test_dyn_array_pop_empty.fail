@@ -1,0 +1,6 @@
+module main
+
+fn main() {
+    var arr: [dyn]int = .{};
+    pop(&arr); // expected to abort: Index out of bounds
+}

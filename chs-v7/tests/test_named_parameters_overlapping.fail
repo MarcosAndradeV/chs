@@ -1,0 +1,10 @@
+module main
+
+fn calc(a: int, b: int, c: int) -> int {
+    return (a - b) * c;
+}
+
+fn main() {
+    // Fails because 'a' is supplied positionally (first argument) and also by name 'a: 3'
+    var res = calc(10, 4, a: 3);
+}

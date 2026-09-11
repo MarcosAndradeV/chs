@@ -1,0 +1,7 @@
+config = {
+    scripts = {
+        test    = "./runtest.py",
+        build   = "cargo build -Fdevelopment",
+        install = "cargo install --path cli"
+    }
+}
